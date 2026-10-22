@@ -31,8 +31,10 @@ tests_add_filter(
 );
 tests_add_filter(
 	'bmlt_lit_data_dir',
-	static function () {
-		return ! empty( $GLOBALS['bmlt_lit_test_data_dir'] ) ? $GLOBALS['bmlt_lit_test_data_dir'] : BMLT_LIT_TEST_BOOT_DIR;
+	static function ( $dir ) {
+		// Same layout as the default location (including multisite's site-<id> subdirectories), elsewhere.
+		$base = ! empty( $GLOBALS['bmlt_lit_test_data_dir'] ) ? $GLOBALS['bmlt_lit_test_data_dir'] : BMLT_LIT_TEST_BOOT_DIR;
+		return preg_replace( '#^' . preg_quote( WP_CONTENT_DIR . '/bmlt-literature-data', '#' ) . '#', $base, $dir );
 	}
 );
 tests_add_filter(

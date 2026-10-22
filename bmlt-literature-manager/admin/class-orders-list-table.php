@@ -251,7 +251,7 @@ class Orders_List_Table extends \WP_List_Table {
 		echo '<label for="bmlt-lit-f-to">' . esc_html__( 'To', 'bmlt-literature-manager' ) . '</label> <input type="date" id="bmlt-lit-f-to" name="date_to" value="' . esc_attr( self::filter( 'date_to' ) ) . '"> ';
 		echo '<label for="bmlt-lit-f-pp">' . esc_html__( 'Per page', 'bmlt-literature-manager' ) . '</label> <select name="per_page" id="bmlt-lit-f-pp">';
 		foreach ( self::PER_PAGE_CHOICES as $n ) {
-			echo '<option value="' . esc_attr( $n ) . '" ' . selected( self::per_page(), $n, false ) . '>' . esc_html( $n ) . '</option>';
+			echo '<option value="' . esc_attr( (string) $n ) . '" ' . selected( self::per_page(), $n, false ) . '>' . esc_html( (string) $n ) . '</option>';
 		}
 		echo '</select>';
 		submit_button( __( 'Filter', 'bmlt-literature-manager' ), '', 'filter_action', false );

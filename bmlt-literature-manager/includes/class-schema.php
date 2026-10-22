@@ -91,6 +91,22 @@ class Schema {
 	}
 
 	/**
+	 * List of positive integer ids (anything else, negative numbers included, is dropped).
+	 *
+	 * @param mixed $v Value.
+	 * @return int[]
+	 */
+	public static function ids( $v ) {
+		$out = array();
+		foreach ( is_array( $v ) ? $v : array() as $id ) {
+			if ( ( is_int( $id ) && $id > 0 ) || ( is_string( $id ) && ctype_digit( $id ) && (int) $id > 0 ) ) {
+				$out[ (int) $id ] = (int) $id;
+			}
+		}
+		return array_values( $out );
+	}
+
+	/**
 	 * Array value.
 	 *
 	 * @param array  $r   Record.
@@ -315,7 +331,7 @@ class Schema {
 			}
 			$v = $s['bmlt'][ $k ];
 			if ( 'selected_areas' === $k ) {
-				$bmlt[ $k ] = is_array( $v ) ? array_values( array_unique( array_filter( array_map( 'absint', $v ) ) ) ) : array();
+				$bmlt[ $k ] = self::ids( $v );
 			} elseif ( in_array( $k, array( 'root_url', 'endpoint_override' ), true ) ) {
 				$bmlt[ $k ] = is_scalar( $v ) ? esc_url_raw( (string) $v, array( 'http', 'https' ) ) : '';
 			} elseif ( is_scalar( $v ) ) {
@@ -386,7 +402,7 @@ class Schema {
 				continue;
 			}
 			$caps  = isset( $g['caps'] ) && is_array( $g['caps'] ) ? array_values( array_intersect( Permissions::caps(), array_map( 'strval', $g['caps'] ) ) ) : array();
-			$areas = isset( $g['areas'] ) && is_array( $g['areas'] ) ? array_values( array_unique( array_filter( array_map( 'absint', $g['areas'] ) ) ) ) : array();
+			$areas = isset( $g['areas'] ) ? self::ids( $g['areas'] ) : array();
 			if ( $caps || $areas ) {
 				$users[ $uid ] = array(
 					'caps'  => $caps,

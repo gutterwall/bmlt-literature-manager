@@ -287,7 +287,7 @@ class PublicOrderTest extends TestCase {
 		$this->assertStringContainsString( 'Thank you — your order has been received', $html );
 		$this->assertStringContainsString( esc_html( $q['bmlt_lit_order'] ), $html );
 		$this->assertStringContainsString( 'Pick up at the Riverside ASC.', $html, 'the Area\'s delivery instructions' );
-		$_GET['bmlt_lit_key'] = 'x' . substr( $q['bmlt_lit_key'], 1 );
+		$_GET['bmlt_lit_key'] = ( 'A' === $q['bmlt_lit_key'][0] ? 'B' : 'A' ) . substr( $q['bmlt_lit_key'], 1 );
 		$this->assertStringContainsString( 'That order confirmation link is invalid or has expired.', do_shortcode( '[bmlt_literature_order]' ) );
 
 		// Age the order by 31 days.

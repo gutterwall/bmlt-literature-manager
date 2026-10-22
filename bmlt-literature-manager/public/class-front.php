@@ -40,8 +40,32 @@ class Front {
 	 */
 	public static function init() {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
+		add_action( 'template_redirect', array( __CLASS__, 'maybe_no_cache' ), 1 );
 		add_action( 'template_redirect', array( __CLASS__, 'handle_submission' ) );
 		add_action( 'admin_post_bmlt_lit_print_order', array( __CLASS__, 'print_order' ) );
+	}
+
+	/**
+	 * Keep pages with the order form out of page caches. A cached copy would hand every visitor the same form token
+	 * (and, for visitors who are not logged in, the same valid security token for up to a day).
+	 */
+	public static function maybe_no_cache() {
+		$post = is_singular() ? get_queried_object() : null;
+		if ( $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'bmlt_literature_order' ) ) {
+			self::no_cache();
+		}
+	}
+
+	/**
+	 * Tell caching plugins (DONOTCACHEPAGE) and browsers/proxies (headers, when still possible) not to store this page.
+	 */
+	public static function no_cache() {
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+		if ( ! headers_sent() ) {
+			nocache_headers();
+		}
 	}
 
 	/**
@@ -183,6 +207,7 @@ class Front {
 
 		self::ensure_registered();
 		wp_enqueue_style( 'bmlt-lit-public' );
+		self::no_cache();
 
 		// Confirmation view after a successful submission.
 		if ( isset( $_GET['bmlt_lit_order'], $_GET['bmlt_lit_key'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -645,13 +670,29 @@ class Front {
 			'contact_email'   => $values['contact_email'],
 			'notes'           => $values['notes'],
 			'lines'           => $lines,
-			'submission_hash' => hash( 'sha256', 'order:' . $token ),
+			'submission_hash' => self::submission_hash( $token, (int) $meeting['id'], $values, $lines ),
 			'ip_hash'         => $ip_hash,
 			'_rl_key'         => $rl_key,
 			'_window'         => $window,
 			'_token'          => $token,
 			'_areas'          => $form_areas,
 		);
+	}
+
+	/**
+	 * Duplicate-submission key: the form token together with what was ordered and by whom. Pressing Submit twice
+	 * gives the same key (one order); two people who were served the same cached form do not.
+	 *
+	 * @param string $token   Form token.
+	 * @param int    $meeting Meeting ID.
+	 * @param array  $values  Sanitized contact fields.
+	 * @param array  $lines   item_id => quantity.
+	 * @return string
+	 */
+	private static function submission_hash( $token, $meeting, array $values, array $lines ) {
+		ksort( $lines );
+		$content = array( $meeting, $values['contact_name'], $values['contact_phone'], strtolower( $values['contact_email'] ), $values['notes'], $lines );
+		return hash( 'sha256', 'order:' . $token . ':' . wp_json_encode( $content ) );
 	}
 
 	/* ------------------------------------------------------------------

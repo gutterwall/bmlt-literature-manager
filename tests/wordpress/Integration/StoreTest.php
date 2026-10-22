@@ -176,6 +176,35 @@ class StoreTest extends TestCase {
 		restore_current_blog();
 	}
 
+	public function test_upgrading_from_6_2_renames_old_previous_versions_once() {
+		// A 6.2 data directory: previous versions as *.json.php.bak, a temp file left by an interrupted save.
+		$catalog = file_get_contents( Store::path( 'catalog' ) );
+		foreach ( glob( $this->dir . '/{,orders/}*.bak.json.php', GLOB_BRACE ) as $f ) {
+			rename( $f, preg_replace( '/\.bak\.json\.php$/', '.json.php.bak', $f ) );
+		}
+		file_put_contents( Store::path( 'catalog' ) . '.tmp-AbCd1234', 'partial' );
+		$doc                   = Store::get( 'settings' );
+		$doc['meta']['schema'] = 2;
+		file_put_contents( Store::path( 'settings' ), Store::HEADER . wp_json_encode( $doc ) );
+		self::reset_plugin_state();
+
+		// Until the upgrade runs, a damaged file is still recovered from the old-style copy.
+		file_put_contents( Store::path( 'catalog' ), Store::HEADER . '{broken' );
+		$this->assertNotEmpty( Store::get( 'catalog' )['items'] );
+		file_put_contents( Store::path( 'catalog' ), $catalog );
+		self::reset_plugin_state();
+
+		delete_transient( 'bmlt_lit_upgrade_attempt' );
+		\BMLT_Lit\Migrator::maybe_initialize();
+		self::reset_plugin_state();
+		$this->assertSame( 3, \BMLT_Lit\Settings::meta()['schema'] );
+		$this->assertSame( array(), glob( $this->dir . '/{,orders/,audit/,cache/}*.bak', GLOB_BRACE ) );
+		$this->assertSame( array(), glob( $this->dir . '/*.tmp-*' ) );
+		$this->assertFileExists( Store::bak_path( 'catalog' ) );
+		$this->assertFileExists( Store::bak_path( 'inventory' ) );
+		$this->assertSame( 0, Store::upgrade_layout(), 'nothing left to do' );
+	}
+
 	public function test_health_reports_the_store() {
 		$h = Store::health();
 		$this->assertTrue( $h['exists'] );

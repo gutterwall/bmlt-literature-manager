@@ -28,9 +28,9 @@ class Settings {
 	const DOC = 'settings';
 
 	/**
-	 * Current storage schema version.
+	 * Current storage schema version (3: previous versions are saved as *.bak.json.php, see Store).
 	 */
-	const SCHEMA = 2;
+	const SCHEMA = 3;
 
 	/**
 	 * Request-level cache.

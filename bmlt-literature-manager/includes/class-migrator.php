@@ -62,6 +62,7 @@ class Migrator {
 	 */
 	public static function maybe_initialize() {
 		if ( Store::exists( Settings::DOC ) ) {
+			self::maybe_upgrade();
 			return;
 		}
 		if ( get_transient( 'bmlt_lit_init_attempt' ) ) {
@@ -98,6 +99,31 @@ class Migrator {
 			}
 		);
 		delete_transient( 'bmlt_lit_init_attempt' );
+	}
+
+	/**
+	 * Bring an existing data directory up to the current storage layout (once per change of Settings::SCHEMA).
+	 *
+	 * Schema 3 (6.3.0): previous versions are kept as "<name>.bak.json.php" instead of "<name>.json.php.bak".
+	 */
+	public static function maybe_upgrade() {
+		$meta = Settings::meta();
+		if ( ( isset( $meta['schema'] ) && (int) $meta['schema'] >= Settings::SCHEMA ) || get_transient( 'bmlt_lit_upgrade_attempt' ) ) {
+			return;
+		}
+		set_transient( 'bmlt_lit_upgrade_attempt', 1, 10 * MINUTE_IN_SECONDS ); // Not on every request if the directory is read-only.
+		Store::upgrade_layout();
+		$done = Store::tx(
+			static function () {
+				$doc                   = Settings::with_meta( Store::get( Settings::DOC ) );
+				$doc['meta']['schema'] = Settings::SCHEMA;
+				return Store::put( Settings::DOC, $doc );
+			}
+		);
+		if ( true === $done ) {
+			delete_transient( 'bmlt_lit_upgrade_attempt' );
+		}
+		Settings::flush();
 	}
 
 	/**
@@ -207,12 +233,12 @@ class Migrator {
 				$items = array();
 				$notes = array();
 				if ( $has_it ) {
-					foreach ( (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$it} WHERE order_id IN ({$ph}) ORDER BY id ASC", $ids ), ARRAY_A ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
+					foreach ( (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$it} WHERE order_id IN ({$ph}) ORDER BY id ASC", $ids ), ARRAY_A ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $ph is a list of %d placeholders.
 						$items[ (int) $r['order_id'] ][] = $r;
 					}
 				}
 				if ( $has_nt ) {
-					foreach ( (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$nt} WHERE order_id IN ({$ph}) ORDER BY id ASC", $ids ), ARRAY_A ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
+					foreach ( (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$nt} WHERE order_id IN ({$ph}) ORDER BY id ASC", $ids ), ARRAY_A ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $ph is a list of %d placeholders.
 						$notes[ (int) $r['order_id'] ][] = $r;
 					}
 				}

@@ -59,6 +59,15 @@ class Email {
 	}
 
 	/**
+	 * Error captured from the last wp_mail() call (set by capture_error()).
+	 *
+	 * @return string
+	 */
+	public static function last_error() {
+		return (string) self::$last_error;
+	}
+
+	/**
 	 * Send an email.
 	 *
 	 * @param string|string[] $to       Recipients.
@@ -94,7 +103,7 @@ class Email {
 		self::$alt_body = null;
 
 		if ( ! $sent ) {
-			$message = '' !== self::$last_error ? self::$last_error : __( 'WordPress could not send the email.', 'bmlt-literature-manager' );
+			$message = '' !== self::last_error() ? self::last_error() : __( 'WordPress could not send the email.', 'bmlt-literature-manager' );
 			Helpers::log( 'Email send failed', array( 'error' => $message ) );
 			return new \WP_Error( 'mail_failed', $message );
 		}

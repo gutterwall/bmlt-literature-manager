@@ -951,7 +951,8 @@ class Orders {
 	}
 
 	/**
-	 * Anonymize all orders for an email address (privacy eraser).
+	 * Anonymize all orders for an email address (privacy eraser): in the order files, their previous versions and
+	 * the backup snapshots. Items and totals are kept for literature accounting.
 	 *
 	 * @param string $email Email.
 	 * @return int Orders anonymized.
@@ -961,43 +962,76 @@ class Orders {
 		if ( '' === $email ) {
 			return 0;
 		}
-		$count  = 0;
-		$result = Store::tx(
-			static function () use ( $email, &$count ) {
+		$count   = 0;
+		$touched = array();
+		$result  = Store::tx(
+			static function () use ( $email, &$count, &$touched ) {
 				$idx    = self::index();
 				$months = array();
-				foreach ( $idx['orders'] as $id => $e ) {
-					if ( 0 !== strcasecmp( (string) $e['contact_email'], $email ) ) {
-						continue;
-					}
-					$doc = 'orders/' . $e['month'];
-					if ( ! isset( $months[ $doc ] ) ) {
-						$months[ $doc ] = Store::get( $doc, array( 'orders' => array() ) );
-					}
-					foreach ( array( 'contact_phone', 'contact_email', 'notes', 'ip_hash' ) as $f ) {
-						if ( isset( $months[ $doc ]['orders'][ $id ] ) ) {
-							$months[ $doc ]['orders'][ $id ][ $f ] = '';
+				foreach ( $idx['orders'] as $e ) {
+					if ( 0 === strcasecmp( (string) $e['contact_email'], $email ) ) {
+						$doc = 'orders/' . $e['month'];
+						if ( ! isset( $months[ $doc ] ) ) {
+							$months[ $doc ] = Store::get( $doc, array( 'orders' => array() ) );
 						}
 					}
-					if ( isset( $months[ $doc ]['orders'][ $id ] ) ) {
-						$months[ $doc ]['orders'][ $id ]['contact_name'] = __( '[removed]', 'bmlt-literature-manager' );
-					}
-					$idx['orders'][ $id ]['contact_name']  = __( '[removed]', 'bmlt-literature-manager' );
-					$idx['orders'][ $id ]['contact_email'] = '';
-					$idx['orders'][ $id ]['contact_phone'] = '';
-					++$count;
 				}
+				foreach ( $months as $doc => $data ) {
+					Store::put( $doc, self::scrub_orders( $data, $email ) );
+				}
+				$idx   = self::scrub_orders( $idx, $email, $count );
 				if ( ! $count ) {
 					return true;
 				}
-				foreach ( $months as $doc => $data ) {
-					Store::put( $doc, $data );
-				}
 				Store::put( self::INDEX, $idx );
+				$touched = array_merge( array_keys( $months ), array( self::INDEX ) );
 				return true;
 			}
 		);
-		return is_wp_error( $result ) ? 0 : $count;
+		if ( is_wp_error( $result ) ) {
+			return 0;
+		}
+		if ( $count ) {
+			Store::replace_backups( $touched );
+			foreach ( Store::snapshot_files( 'orders' ) as $copy ) {
+				Store::edit_copy(
+					$copy,
+					static function ( array $data ) use ( $email ) {
+						$n   = 0;
+						$new = self::scrub_orders( $data, $email, $n );
+						return $n ? $new : null;
+					}
+				);
+			}
+		}
+		return $count;
+	}
+
+	/**
+	 * Remove one requester's contact details from an order document (a month file or the index).
+	 *
+	 * @param array  $doc   Document with an "orders" map.
+	 * @param string $email Email.
+	 * @param int    $count Incremented per order changed.
+	 * @return array
+	 */
+	private static function scrub_orders( array $doc, $email, &$count = 0 ) {
+		if ( ! isset( $doc['orders'] ) || ! is_array( $doc['orders'] ) ) {
+			return $doc;
+		}
+		foreach ( $doc['orders'] as $id => $o ) {
+			if ( ! is_array( $o ) || ! isset( $o['contact_email'] ) || 0 !== strcasecmp( (string) $o['contact_email'], $email ) ) {
+				continue;
+			}
+			foreach ( array( 'contact_phone', 'contact_email', 'notes', 'ip_hash' ) as $f ) {
+				if ( array_key_exists( $f, $o ) ) {
+					$doc['orders'][ $id ][ $f ] = '';
+				}
+			}
+			$doc['orders'][ $id ]['contact_name'] = __( '[removed]', 'bmlt-literature-manager' );
+			++$count;
+		}
+		return $doc;
 	}
 
 	/**

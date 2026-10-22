@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/includes/class-helpers.php';
 require_once __DIR__ . '/includes/class-store.php';
 
+if ( ! function_exists( 'bmlt_lit_uninstall_site' ) ) :
+
 /**
  * Remove plugin data for the current site if the administrator opted in.
  */
@@ -37,10 +39,11 @@ function bmlt_lit_uninstall_site() {
 		return;
 	}
 
-	// JSON data directory (only if it really is ours: it must contain settings or a catalog).
+	// JSON data directory (only if it really is ours: it must contain settings or a catalog). On a network, the main
+	// site's directory also holds the other sites' "site-<id>" directories: those follow their own site's choice.
 	$dir = \BMLT_Lit\Store::dir();
 	if ( '' !== $dir && is_dir( $dir ) && ( \BMLT_Lit\Store::exists( 'settings' ) || \BMLT_Lit\Store::exists( 'catalog' ) ) ) {
-		\BMLT_Lit\Store::rrmdir( $dir );
+		\BMLT_Lit\Store::rrmdir( $dir, is_multisite() && get_current_blog_id() <= 1 ? '/^site-\d+$/' : '' );
 	}
 
 	// Legacy v1.0 tables and options.
@@ -64,6 +67,8 @@ function bmlt_lit_uninstall_site() {
 	delete_metadata( 'user', 0, 'bmlt_lit_restrict_areas', '', true );
 	delete_metadata( 'user', 0, 'bmlt_lit_orders_per_page', '', true );
 }
+
+endif;
 
 if ( is_multisite() ) {
 	foreach ( get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $bmlt_lit_site ) {

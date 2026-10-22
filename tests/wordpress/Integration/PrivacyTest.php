@@ -30,7 +30,7 @@ class PrivacyTest extends TestCase {
 
 	public function test_erase_removes_contact_details_everywhere_and_keeps_accounting() {
 		$pat   = $this->place_order( $this->order_post( array( 'BT' => 2 ), array( 'bmlt_lit_notes' => 'Ring 555-0123 at the side door' ) ) )['order'];
-		$other = $this->place_order( $this->order_post( array( 'IP1' => 1 ), array( 'bmlt_lit_email' => 'other@example.org', 'bmlt_lit_name' => 'Other Person' ) ) )['order'];
+		$other = $this->place_order( $this->order_post( array( 'IP1' => 1 ), array( 'bmlt_lit_email' => 'other@example.org', 'bmlt_lit_name' => 'Other Person', 'bmlt_lit_phone' => '555-0177' ) ) )['order'];
 		Store::snapshot( 'before-erase' );
 
 		$r = Privacy::erase( 'pat@example.org' );

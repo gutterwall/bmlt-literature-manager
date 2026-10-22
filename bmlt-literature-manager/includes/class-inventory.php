@@ -248,22 +248,22 @@ class Inventory {
 					'special'             => ( $current && ! empty( $current['special'] ) ) ? 1 : 0,
 				);
 				$new     = $old;
-				if ( isset( $changes['set'] ) && null !== $changes['set'] ) {
+				if ( isset( $changes['set'] ) ) {
 					$new['on_hand'] = max( 0, min( 1000000, (int) $changes['set'] ) );
 				}
-				if ( isset( $changes['delta'] ) && null !== $changes['delta'] && 0 !== (int) $changes['delta'] ) {
+				if ( isset( $changes['delta'] ) && 0 !== (int) $changes['delta'] ) {
 					$new['on_hand'] = max( 0, min( 1000000, $new['on_hand'] + (int) $changes['delta'] ) );
 				}
-				if ( isset( $changes['low_stock_threshold'] ) && null !== $changes['low_stock_threshold'] ) {
+				if ( isset( $changes['low_stock_threshold'] ) ) {
 					$new['low_stock_threshold'] = max( 0, min( 100000, (int) $changes['low_stock_threshold'] ) );
 				}
-				if ( isset( $changes['reorder_quantity'] ) && null !== $changes['reorder_quantity'] ) {
+				if ( isset( $changes['reorder_quantity'] ) ) {
 					$new['reorder_quantity'] = max( 0, min( 100000, (int) $changes['reorder_quantity'] ) );
 				}
-				if ( isset( $changes['notes'] ) && null !== $changes['notes'] ) {
+				if ( isset( $changes['notes'] ) ) {
 					$new['notes'] = Helpers::limit( sanitize_textarea_field( (string) $changes['notes'] ), 2000 );
 				}
-				if ( isset( $changes['special'] ) && null !== $changes['special'] ) {
+				if ( isset( $changes['special'] ) ) {
 					$new['special'] = $changes['special'] ? 1 : 0;
 				}
 				if ( $new === $old && $current ) {

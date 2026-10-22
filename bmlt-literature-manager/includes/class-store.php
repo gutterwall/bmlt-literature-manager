@@ -15,7 +15,9 @@
  * files are added as a second layer.
  *
  * Writes are serialized with an exclusive lock (flock, or a mkdir lock for filesystems without flock),
- * written to a temporary file and atomically renamed into place. The previous version is kept as ".bak".
+ * written to a temporary file and atomically renamed into place. The previous version is kept as
+ * "<name>.bak.json.php". Every file holding data ends in .php and starts with the exit header, because nginx
+ * ignores .htaccess and serves any other file as plain text (versions before 6.3 kept "<name>.json.php.bak").
  * A file that exists but cannot be parsed is never silently replaced: transactions touching it abort.
  *
  * @package BMLT_Lit
@@ -132,10 +134,56 @@ class Store {
 	 * @return string
 	 */
 	public static function path( $name ) {
+		return self::dir() . '/' . self::check_name( $name ) . self::EXT;
+	}
+
+	/**
+	 * Path of a document's previous version.
+	 *
+	 * @param string $name Name.
+	 * @return string
+	 */
+	public static function bak_path( $name ) {
+		return self::dir() . '/' . self::check_name( $name ) . '.bak' . self::EXT;
+	}
+
+	/**
+	 * Validated name, or an exception.
+	 *
+	 * @param string $name Name.
+	 * @return string
+	 * @throws \InvalidArgumentException When invalid.
+	 */
+	private static function check_name( $name ) {
 		if ( ! self::valid_name( $name ) ) {
 			throw new \InvalidArgumentException( 'Invalid storage document name.' );
 		}
-		return self::dir() . '/' . $name . self::EXT;
+		return $name;
+	}
+
+	/**
+	 * Rename previous versions saved by versions before 6.3 ("<name>.json.php.bak", readable on nginx) and remove
+	 * temporary files left by interrupted saves. Safe to run any number of times.
+	 *
+	 * @return int Files renamed or removed.
+	 */
+	public static function upgrade_layout() {
+		$dir = self::dir();
+		$n   = 0;
+		foreach ( array( '', '/orders', '/audit', '/cache' ) as $sub ) {
+			foreach ( (array) glob( $dir . $sub . '/*' . self::EXT . '.bak' ) as $old ) {
+				$new = substr( $old, 0, -strlen( self::EXT . '.bak' ) ) . '.bak' . self::EXT;
+				if ( file_exists( $new ) ? @unlink( $old ) : @rename( $old, $new ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+					++$n;
+				}
+			}
+			foreach ( (array) glob( $dir . $sub . '/*' . self::EXT . '.tmp-*' ) as $tmp ) {
+				if ( @unlink( $tmp ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+					++$n;
+				}
+			}
+		}
+		return $n;
 	}
 
 	/**
@@ -216,7 +264,10 @@ class Store {
 		if ( false !== $data ) {
 			return $data;
 		}
-		$bak = self::read_file( $path . '.bak' );
+		$bak = self::read_file( self::bak_path( $name ) );
+		if ( ! is_array( $bak ) ) {
+			$bak = self::read_file( $path . '.bak' ); // Saved by a version before 6.3, not yet upgraded.
+		}
 		if ( is_array( $bak ) ) {
 			Helpers::log( 'Storage file was unreadable; using its .bak copy.', array( 'file' => $name ) );
 			self::$read_errors[ $name ] = $name;
@@ -230,7 +281,7 @@ class Store {
 		Helpers::log( 'Storage file is unreadable and has no usable backup.', array( 'file' => $name ) );
 		if ( $strict ) {
 			/* translators: %s: file name. */
-			throw new \RuntimeException( sprintf( __( 'The data file "%s" is damaged and could not be read. No changes were saved. Restore it from a backup (Literature → Tools / Status).', 'bmlt-literature-manager' ), $name . self::EXT ) );
+			throw new \RuntimeException( sprintf( __( 'The data file "%s" is damaged and could not be read. No changes were saved. Restore it from a backup (Literature → Tools / Status).', 'bmlt-literature-manager' ), $name . self::EXT ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- becomes a WP_Error message, escaped where shown.
 		}
 		return null;
 	}
@@ -422,7 +473,7 @@ class Store {
 				self::cleanup( $temps );
 				return new \WP_Error( 'bmlt_lit_storage_encode', __( 'The literature data could not be encoded for saving.', 'bmlt-literature-manager' ) );
 			}
-			$tmp   = $path . '.tmp-' . wp_generate_password( 8, false, false );
+			$tmp   = substr( $path, 0, -strlen( self::EXT ) ) . '.tmp-' . strtolower( wp_generate_password( 8, false, false ) ) . self::EXT;
 			$body  = self::HEADER . $json . "\n";
 			$bytes = @file_put_contents( $tmp, $body, LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
 			if ( strlen( $body ) !== $bytes ) {
@@ -437,7 +488,7 @@ class Store {
 		foreach ( $temps as $name => $tmp ) {
 			$path = self::path( $name );
 			if ( file_exists( $path ) ) {
-				@copy( $path, $path . '.bak' ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+				@copy( $path, self::bak_path( $name ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
 			}
 			if ( null === $tmp ) {
 				@unlink( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
@@ -606,19 +657,90 @@ class Store {
 	}
 
 	/**
+	 * Make the previous versions of documents identical to their current content (used after personal data was
+	 * removed, so the old copy does not keep it).
+	 *
+	 * @param string[] $names Document names.
+	 */
+	public static function replace_backups( array $names ) {
+		foreach ( $names as $name ) {
+			if ( ! self::valid_name( $name ) || ! file_exists( self::path( $name ) ) ) {
+				continue;
+			}
+			@copy( self::path( $name ), self::bak_path( $name ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+			if ( file_exists( self::path( $name ) . '.bak' ) ) {
+				@unlink( self::path( $name ) . '.bak' ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+			}
+		}
+	}
+
+	/**
+	 * Copies of a sub-directory's documents inside the backup snapshots (backups/<snapshot>/<subdir>/*.json.php).
+	 *
+	 * @param string $subdir Sub-directory, e.g. "orders".
+	 * @return string[] Absolute paths.
+	 */
+	public static function snapshot_files( $subdir ) {
+		if ( ! preg_match( '#^[a-z0-9_-]+$#', (string) $subdir ) ) {
+			return array();
+		}
+		return array_values( array_filter( (array) glob( self::dir() . '/backups/*/' . $subdir . '/*' . self::EXT ) ) );
+	}
+
+	/**
+	 * Change a document copy in place (a snapshot file): read, transform, write atomically. Holds the store lock.
+	 *
+	 * @param string   $path Absolute path inside the data directory.
+	 * @param callable $fn   Receives the decoded array, returns the new array (or null to leave the file alone).
+	 * @return bool Whether the file was rewritten.
+	 */
+	public static function edit_copy( $path, callable $fn ) {
+		$path = wp_normalize_path( (string) $path );
+		if ( 0 !== strpos( $path, self::dir() . '/backups/' ) || false !== strpos( $path, '..' ) || ! is_file( $path ) ) {
+			return false;
+		}
+		$result = self::tx(
+			static function () use ( $path, $fn ) {
+				$data = self::read_file( $path );
+				if ( ! is_array( $data ) ) {
+					return false;
+				}
+				$new = $fn( $data );
+				if ( ! is_array( $new ) ) {
+					return false;
+				}
+				$json = wp_json_encode( $new, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+				$tmp  = substr( $path, 0, -strlen( self::EXT ) ) . '.tmp-' . strtolower( wp_generate_password( 8, false, false ) ) . self::EXT;
+				if ( false === $json || false === @file_put_contents( $tmp, self::HEADER . $json . "\n", LOCK_EX ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+					return false;
+				}
+				return @rename( $tmp, $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+			}
+		);
+		return true === $result;
+	}
+
+	/**
 	 * Recursively delete a directory inside the data directory.
 	 *
-	 * @param string $dir Directory.
+	 * @param string $dir  Directory.
+	 * @param string $keep Optional regular expression: entries directly inside $dir whose names match are kept
+	 *                     (and so is $dir itself).
 	 */
-	public static function rrmdir( $dir ) {
+	public static function rrmdir( $dir, $keep = '' ) {
 		$dir  = wp_normalize_path( $dir );
 		$base = self::dir();
-		if ( '' === $base || 0 !== strpos( $dir, $base ) || ! is_dir( $dir ) ) {
+		if ( '' === $base || ( $dir !== $base && 0 !== strpos( $dir, $base . '/' ) ) || ! is_dir( $dir ) ) {
 			return;
 		}
 		$items = scandir( $dir );
+		$kept  = false;
 		foreach ( (array) $items as $item ) {
 			if ( '.' === $item || '..' === $item ) {
+				continue;
+			}
+			if ( '' !== $keep && preg_match( $keep, $item ) ) {
+				$kept = true;
 				continue;
 			}
 			$path = $dir . '/' . $item;
@@ -628,7 +750,9 @@ class Store {
 				@unlink( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
 			}
 		}
-		@rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+		if ( ! $kept ) {
+			@rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+		}
 	}
 
 	/**
@@ -655,7 +779,7 @@ class Store {
 			'inside_content' => 0 === strpos( $dir . '/', $content . '/' ),
 			'files'          => $count,
 			'bytes'          => $size,
-			'lock_method'    => defined( 'BMLT_LIT_LOCK_METHOD' ) ? (string) BMLT_LIT_LOCK_METHOD : 'flock (auto fallback: mkdir)',
+			'lock_method'    => '' !== self::$lock_method ? self::$lock_method : ( defined( 'BMLT_LIT_LOCK_METHOD' ) ? (string) BMLT_LIT_LOCK_METHOD : 'flock (auto fallback: mkdir)' ),
 			'read_errors'    => self::read_errors(),
 			'snapshots'      => is_dir( $dir . '/backups' ) ? count( (array) glob( $dir . '/backups/*', GLOB_ONLYDIR ) ) : 0,
 		);

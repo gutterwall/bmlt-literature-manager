@@ -455,7 +455,7 @@ class Admin {
 			wp_die( esc_html__( 'You do not have permission to view this page.', 'bmlt-literature-manager' ) );
 		}
 		$preview = null;
-		$token   = isset( $_GET['preview'] ) ? preg_replace( '/[^A-Za-z0-9]/', '', (string) wp_unslash( $_GET['preview'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$token   = isset( $_GET['preview'] ) && is_scalar( $_GET['preview'] ) ? preg_replace( '/[^A-Za-z0-9]/', '', sanitize_text_field( wp_unslash( $_GET['preview'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( $token ) {
 			$stored = get_transient( 'bmlt_lit_import_' . get_current_user_id() . '_' . $token );
 			if ( is_array( $stored ) ) {
@@ -927,7 +927,7 @@ class Admin {
 		$type = isset( $p['type'] ) && is_scalar( $p['type'] ) ? sanitize_key( $p['type'] ) : 'catalog';
 		$json = isset( $p['json'] ) && is_string( $p['json'] ) ? $p['json'] : '';
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- file array validated below.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.NonceVerification.Missing -- nonce verified above; file array validated below.
 		$file = isset( $_FILES['json_file'] ) && is_array( $_FILES['json_file'] ) ? $_FILES['json_file'] : null;
 		if ( $file && isset( $file['error'], $file['tmp_name'], $file['size'] ) && UPLOAD_ERR_OK === (int) $file['error'] ) {
 			if ( (int) $file['size'] > Import_Export::MAX_BYTES ) {
@@ -1040,7 +1040,7 @@ class Admin {
 
 		$root = self::clean_url( isset( $p['root_url'] ) ? $p['root_url'] : '' );
 		if ( '' !== trim( (string) ( isset( $p['root_url'] ) ? $p['root_url'] : '' ) ) && '' === $root ) {
-			Helpers::add_notice( __( 'The Root Server URL is not a valid http(s) URL.', 'bmlt-literature-manager' ), 'error' );
+			Helpers::add_notice( __( 'The Root Server URL was not saved. It must be an http(s) URL of a server on the internet, on port 80, 443 or 8080. (A server on a private network or another port can be allowed with WordPress’s http_request_host_is_external and http_allowed_safe_ports filters.)', 'bmlt-literature-manager' ), 'error' );
 		}
 		$root = preg_replace( '#/client_interface/.*$#i', '', $root );
 		$override = self::clean_url( isset( $p['endpoint_override'] ) ? $p['endpoint_override'] : '' );
@@ -1421,6 +1421,7 @@ class Admin {
 			self::go( 'bmlt-lit-status' );
 		}
 		Permissions::install_roles();
+		Store::upgrade_layout();
 		Store::snapshot( 'pre-repair' );
 		$res = Orders::rebuild_index();
 		if ( is_wp_error( $res ) ) {
@@ -1486,7 +1487,7 @@ class Admin {
 			self::go( 'bmlt-lit-status' );
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- validated below.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.NonceVerification.Missing -- nonce verified above; validated below.
 		$file = isset( $_FILES['backup_file'] ) && is_array( $_FILES['backup_file'] ) ? $_FILES['backup_file'] : null;
 		if ( ! $file || ! isset( $file['error'], $file['tmp_name'], $file['size'] ) || UPLOAD_ERR_OK !== (int) $file['error'] || ! is_uploaded_file( $file['tmp_name'] ) ) {
 			Helpers::add_notice( __( 'Please choose a backup file to upload.', 'bmlt-literature-manager' ), 'error' );

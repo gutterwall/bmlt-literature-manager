@@ -192,6 +192,7 @@ class Import_Export {
 				$v = $raw[ $field ];
 				if ( ! ( is_scalar( $v ) || null === $v ) ) {
 					$preview['errors'][] = $label . ': ' . sprintf( /* translators: %s: field. */ __( 'field "%s" must be a simple value.', 'bmlt-literature-manager' ), $field );
+					++$preview['counts']['invalid'];
 					continue 2;
 				}
 				$clean[ $field ] = $v;
