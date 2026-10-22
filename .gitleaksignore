@@ -1,0 +1,2 @@
+# A made-up SMTP password in a test (the test checks it never reaches backups, logs or the audit trail).
+cfd59688dbd411e8ca02d9a4ffc9e97389cd5d43:tests/wordpress/Integration/ImportExportTest.php:generic-api-key:144

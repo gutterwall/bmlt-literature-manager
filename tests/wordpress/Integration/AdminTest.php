@@ -15,6 +15,7 @@ class AdminTest extends TestCase {
 	public function set_up() {
 		parent::set_up();
 		require_once ABSPATH . 'wp-admin/includes/admin.php';
+		$GLOBALS['hook_suffix'] = 'toplevel_page_bmlt-lit'; // Set by wp-admin/admin.php; list tables need it on WordPress < 6.
 		set_current_screen( 'toplevel_page_bmlt-lit' );
 	}
 
