@@ -2,6 +2,22 @@
 
 All notable changes to BMLT Literature Manager.
 
+## 6.3.0 — 2026-10-22
+
+Security and privacy:
+
+- Previous versions of data files were saved as `*.json.php.bak`. Web servers that ignore `.htaccess` (nginx) serve such files as plain text, so order files with requesters' names, emails and phone numbers could be downloaded. They are now saved as `*.bak.json.php` (temporary files as `*.tmp-*.json.php`), which never show anything over the web. Existing `.bak` files are renamed automatically after the update, and by **Tools / Status → Verify storage**.
+- Erasing a requester's personal data (Tools → Erase Personal Data) now also removes it from the previous-version copies and from the backup snapshots in the data folder.
+
+Fixes:
+
+- When a page cache served several visitors the same copy of the order form, the second visitor's order was discarded as a duplicate and that visitor was shown the first visitor's confirmation, contact details included. Duplicate submissions are now recognised by what was ordered and by whom, and pages with the order form tell caching plugins (`DONOTCACHEPAGE`) and browsers not to store them.
+- Uninstalling on a multisite network deleted every site's literature data when the main site had chosen "Delete plugin data when uninstalling"; the other sites' data now follows their own setting.
+- Import preview counted an item with a nested (non-simple) field as an error but not as invalid.
+- Restoring a backup no longer turns a negative Area id into a real one.
+- A refused Root Server URL now says why (it must be a public address on port 80, 443 or 8080) and how to allow a private one.
+- README: the starter catalog has 294 items (174 plus 3 × 40 medallions), not 177.
+
 ## 6.2.0 — 2026-10-08
 
 - Review page: quantities are editable, with an Update totals button (or Enter) that re-prices the order on the server; 0 removes an item, and a notice appears until totals are updated.

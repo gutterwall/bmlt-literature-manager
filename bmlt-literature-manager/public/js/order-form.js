@@ -4,7 +4,7 @@
  * Tabs for each group (category) of literature, search across all groups, special-order items sorted
  * to the bottom for the selected Area, special-order flags, pagination and a running total.
  * Prices, availability and totals are always recalculated on the server (Review step).
- * @version 6.2.0
+ * @version 6.3.0
  */
 ( function () {
 	'use strict';

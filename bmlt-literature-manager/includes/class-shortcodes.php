@@ -3,7 +3,7 @@
  * Shortcodes.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  */
 
 namespace BMLT_Lit;

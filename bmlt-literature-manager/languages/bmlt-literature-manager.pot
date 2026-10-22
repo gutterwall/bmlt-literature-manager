@@ -1,3423 +1,4157 @@
+# Copyright (C) 2026 BMLT Literature Manager Contributors
+# This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: BMLT Literature Manager 6.2.0\n"
-"POT-Creation-Date: 2026-10-05 15:29+0000\n"
+"Project-Id-Version: BMLT Literature Manager 6.3.0\n"
+"Report-Msgid-Bugs-To: https://github.com/gutterwall/bmlt-literature-manager/issues\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-22T02:22:15+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: bmlt-literature-manager\n"
 
-#: admin/class-admin.php:87 admin/class-admin.php:120
+#. Plugin Name of the plugin
+#: bmlt-literature-manager.php
+#: includes/class-privacy.php:152
+msgid "BMLT Literature Manager"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: bmlt-literature-manager.php
+msgid "https://bmlt.app/"
+msgstr ""
+
+#. Description of the plugin
+#: bmlt-literature-manager.php
+msgid "Narcotics Anonymous literature ordering with Area-specific inventory, pricing, special orders, order management, email notifications, JSON import/export and SMTP — integrated with the BMLT. All data is stored in JSON files outside the WordPress database, so staging database pushes never overwrite production orders."
+msgstr ""
+
+#. Author of the plugin
+#: bmlt-literature-manager.php
+msgid "BMLT Literature Manager Contributors"
+msgstr ""
+
+#: admin/class-admin.php:88
+#: admin/class-admin.php:121
 msgid "Settings"
 msgstr ""
 
-#: admin/class-admin.php:105 admin/class-admin.php:106 admin/views/order-detail.php:75 admin/views/order-detail.php:79 public/class-front.php:601 public/views/confirmation.php:64
+#: admin/class-admin.php:106
+#: admin/class-admin.php:107
+#: admin/views/order-detail.php:77
+#: admin/views/order-detail.php:81
+#: includes/class-email.php:212
+#: public/class-front.php:787
+#: public/views/confirmation.php:65
+#: public/views/confirmation.php:78
+#: public/views/order-form.php:152
+#: public/views/print-order.php:84
 msgid "Literature"
 msgstr ""
 
-#: admin/class-admin.php:113 admin/views/dashboard.php:37
+#: admin/class-admin.php:114
+#: admin/views/dashboard.php:38
 msgid "Literature Dashboard"
 msgstr ""
 
-#: admin/class-admin.php:113
+#: admin/class-admin.php:114
 msgid "Dashboard"
 msgstr ""
 
-#: admin/class-admin.php:114 admin/views/orders.php:13 includes/class-privacy.php:34 includes/class-privacy.php:48 includes/class-privacy.php:73
+#: admin/class-admin.php:115
+#: admin/views/orders.php:14
+#: includes/class-privacy.php:35
+#: includes/class-privacy.php:49
+#: includes/class-privacy.php:74
 msgid "Literature Orders"
 msgstr ""
 
-#: admin/class-admin.php:114 admin/views/status.php:62 public/views/manager.php:15
+#: admin/class-admin.php:115
+#: admin/views/status.php:63
+#: public/views/manager.php:16
 msgid "Orders"
 msgstr ""
 
-#: admin/class-admin.php:115 admin/views/items.php:13
+#: admin/class-admin.php:116
+#: admin/views/items.php:14
 msgid "Literature Items"
 msgstr ""
 
-#: admin/class-admin.php:115 admin/class-orders-list-table.php:89 admin/views/order-detail.php:108 public/class-front.php:599 public/views/confirmation.php:101 public/views/order-form.php:237
+#: admin/class-admin.php:116
+#: admin/class-orders-list-table.php:90
+#: admin/views/order-detail.php:110
+#: includes/class-email.php:227
+#: includes/class-email.php:257
+#: includes/class-privacy.php:110
+#: public/class-front.php:785
+#: public/views/confirmation.php:102
+#: public/views/order-form.php:226
+#: public/views/print-order.php:113
+#: public/views/review.php:126
 msgid "Items"
 msgstr ""
 
-#: admin/class-admin.php:116 admin/views/inventory.php:21
+#: admin/class-admin.php:117
+#: admin/views/inventory.php:23
 msgid "Area Inventory"
 msgstr ""
 
-#: admin/class-admin.php:116 public/views/manager.php:18
+#: admin/class-admin.php:117
+#: admin/views/settings.php:191
+#: admin/views/settings.php:192
+#: public/views/manager.php:19
 msgid "Inventory"
 msgstr ""
 
-#: admin/class-admin.php:117 admin/class-admin.php:117 admin/views/import-export.php:27 admin/views/items.php:15
+#: admin/class-admin.php:118
+#: admin/views/import-export.php:28
+#: admin/views/items.php:16
 msgid "Import / Export"
 msgstr ""
 
-#: admin/class-admin.php:118 admin/class-admin.php:118 admin/views/bmlt.php:37
+#: admin/class-admin.php:119
+#: admin/views/bmlt.php:38
 msgid "BMLT / Areas"
 msgstr ""
 
-#: admin/class-admin.php:119 admin/class-admin.php:119 admin/views/smtp.php:18
+#: admin/class-admin.php:120
+#: admin/views/smtp.php:19
 msgid "SMTP"
 msgstr ""
 
-#: admin/class-admin.php:120 admin/views/settings.php:22
+#: admin/class-admin.php:121
+#: admin/views/settings.php:23
 msgid "Literature Settings"
 msgstr ""
 
-#: admin/class-admin.php:121 admin/class-admin.php:121 admin/class-admin.php:200 admin/views/status.php:70
+#. translators: %s: file name.
+#: admin/class-admin.php:122
+#: admin/class-admin.php:201
+#: admin/views/status.php:71
 msgid "Tools / Status"
 msgstr ""
 
-#: admin/class-admin.php:156
+#: admin/class-admin.php:157
 msgid "Testing connection…"
 msgstr ""
 
-#: admin/class-admin.php:157 admin/views/bmlt.php:92
+#: admin/class-admin.php:158
+#: admin/views/bmlt.php:93
 msgid "Connection successful."
 msgstr ""
 
-#: admin/class-admin.php:158 admin/views/bmlt.php:92
+#: admin/class-admin.php:159
+#: admin/views/bmlt.php:93
 msgid "Connection failed."
 msgstr ""
 
-#: admin/class-admin.php:159 admin/views/bmlt.php:93
+#: admin/class-admin.php:160
+#: admin/views/bmlt.php:94
 msgid "Server version"
 msgstr ""
 
-#: admin/class-admin.php:160 admin/views/bmlt.php:94
+#: admin/class-admin.php:161
+#: admin/views/bmlt.php:95
 msgid "Service bodies detected"
 msgstr ""
 
-#: admin/class-admin.php:161 admin/views/bmlt.php:95
+#: admin/class-admin.php:162
+#: admin/views/bmlt.php:96
 msgid "Meetings detected"
 msgstr ""
 
-#: admin/class-admin.php:162 admin/views/bmlt.php:95
+#: admin/class-admin.php:163
+#: admin/views/bmlt.php:96
 msgid "(in selected Areas)"
 msgstr ""
 
-#: admin/class-admin.php:163 admin/views/bmlt.php:95
+#: admin/class-admin.php:164
+#: admin/views/bmlt.php:96
 msgid "(on the whole server)"
 msgstr ""
 
-#: admin/class-admin.php:164
+#: admin/class-admin.php:165
 msgid "Reload this page to see the updated list of Areas."
 msgstr ""
 
-#: admin/class-admin.php:165
+#: admin/class-admin.php:166
 msgid "Copied to clipboard."
 msgstr ""
 
-#: admin/class-admin.php:166
+#: admin/class-admin.php:167
 msgid "Copy failed — select the text and copy it manually."
 msgstr ""
 
-#: admin/class-admin.php:167
+#: admin/class-admin.php:168
 msgid "The JSON is valid. Use “Preview import” to see exactly what will change."
 msgstr ""
 
-#: admin/class-admin.php:168
+#: admin/class-admin.php:169
 msgid "Invalid JSON:"
 msgstr ""
 
-#: admin/class-admin.php:169
+#: admin/class-admin.php:170
 msgid "Are you sure?"
 msgstr ""
 
-#: admin/class-admin.php:196
+#: admin/class-admin.php:197
 msgid "BMLT Literature Manager cannot store data yet."
 msgstr ""
 
-#: admin/class-admin.php:196
+#: admin/class-admin.php:197
 msgid "The data store is being initialized; reload this page."
 msgstr ""
 
-#: admin/class-admin.php:200
+#. translators: %s: file name.
+#: admin/class-admin.php:201
 #, php-format
 msgid "Literature data file \"%s\" could not be read. Changes touching it are blocked until it is restored."
 msgstr ""
 
-#: admin/class-admin.php:204
+#: admin/class-admin.php:205
 msgid "Literature data belongs to another site."
 msgstr ""
 
-#: admin/class-admin.php:206
+#. translators: 1: other site URL, 2: this site URL.
+#: admin/class-admin.php:207
 #, php-format
 msgid "The JSON data directory was created by %1$s, but this site is %2$s. If staging and production share or copied this directory, orders may be going to the wrong place."
 msgstr ""
 
-#: admin/class-admin.php:207
+#: admin/class-admin.php:208
 msgid "Review on Tools / Status"
 msgstr ""
 
-#: admin/class-admin.php:210
+#: admin/class-admin.php:211
 msgid "BMLT Literature Manager: no Areas are selected yet."
 msgstr ""
 
-#: admin/class-admin.php:210
+#: admin/class-admin.php:211
 msgid "Configure BMLT / Areas"
 msgstr ""
 
-#: admin/class-admin.php:217
+#. translators: %s: date/time.
+#: admin/class-admin.php:218
 #, php-format
 msgid "The BMLT server could not be reached recently. Cached meeting information from %s is being used."
 msgstr ""
 
-#: admin/class-admin.php:237 admin/class-admin.php:679 includes/class-rest.php:41
+#: admin/class-admin.php:238
+#: admin/class-admin.php:699
+#: includes/class-rest.php:42
 msgid "You do not have permission to do that."
 msgstr ""
 
-#: admin/class-admin.php:300 admin/class-admin.php:338 admin/class-admin.php:366 admin/class-admin.php:403 admin/class-admin.php:447 admin/class-admin.php:502
+#: admin/class-admin.php:301
+#: admin/class-admin.php:339
+#: admin/class-admin.php:367
+#: admin/class-admin.php:404
+#: admin/class-admin.php:455
+#: admin/class-admin.php:510
+#: admin/class-admin.php:533
+#: admin/class-admin.php:551
+#: admin/class-admin.php:582
 msgid "You do not have permission to view this page."
 msgstr ""
 
-#: admin/class-admin.php:344 admin/class-admin.php:793 public/class-front.php:738 includes/class-email.php:473 includes/class-email.php:501 includes/class-orders.php:239
+#: admin/class-admin.php:345
+#: admin/class-admin.php:819
+#: includes/class-email.php:483
+#: includes/class-email.php:511
+#: includes/class-orders.php:240
+#: includes/class-orders.php:245
+#: includes/class-orders.php:553
+#: includes/class-orders.php:558
+#: includes/class-rest.php:228
+#: public/class-front.php:927
 msgid "Order not found."
 msgstr ""
 
-#: admin/class-admin.php:374 admin/class-admin.php:624 admin/class-admin.php:651 includes/class-catalog.php:352 includes/class-catalog.php:414 includes/class-catalog.php:465
+#: admin/class-admin.php:375
+#: admin/class-admin.php:632
+#: admin/class-admin.php:671
+#: includes/class-catalog.php:362
+#: includes/class-catalog.php:424
+#: includes/class-catalog.php:475
+#: includes/class-rest.php:606
+#: includes/class-rest.php:633
+#: includes/class-rest.php:654
 msgid "Item not found."
 msgstr ""
 
-#: admin/class-admin.php:546
+#: admin/class-admin.php:554
 msgid "General"
 msgstr ""
 
-#: admin/class-admin.php:547
+#: admin/class-admin.php:555
 msgid "BMLT"
 msgstr ""
 
-#: admin/class-admin.php:548
+#: admin/class-admin.php:556
 msgid "Area Configuration"
 msgstr ""
 
-#: admin/class-admin.php:549 admin/class-orders-list-table.php:87 admin/views/order-detail.php:67 public/class-front.php:612 public/views/confirmation.php:51 public/views/print-order.php:74
+#: admin/class-admin.php:557
+#: admin/class-orders-list-table.php:88
+#: admin/views/order-detail.php:69
+#: includes/class-privacy.php:102
+#: public/class-front.php:798
+#: public/views/confirmation.php:52
+#: public/views/print-order.php:75
+#: public/views/review.php:68
 msgid "Email"
 msgstr ""
 
-#: admin/class-admin.php:550
+#: admin/class-admin.php:558
 msgid "Email Templates"
 msgstr ""
 
-#: admin/class-admin.php:551
+#: admin/class-admin.php:559
 msgid "Permissions"
 msgstr ""
 
-#: admin/class-admin.php:552
+#: admin/class-admin.php:560
 msgid "Advanced"
 msgstr ""
 
-#: admin/class-admin.php:618
+#: admin/class-admin.php:626
 msgid "You may only manage catalogs for your own Areas."
 msgstr ""
 
-#: admin/class-admin.php:638 includes/class-rest.php:612
+#: admin/class-admin.php:653
+msgid "Special-order setting changed on item page"
+msgstr ""
+
+#: admin/class-admin.php:658
+#: includes/class-rest.php:618
 msgid "Item saved."
 msgstr ""
 
-#: admin/class-admin.php:655 includes/class-rest.php:654
+#: admin/class-admin.php:675
+#: includes/class-rest.php:660
 msgid "Item deleted."
 msgstr ""
 
-#: admin/class-admin.php:658 includes/class-rest.php:633
+#: admin/class-admin.php:678
+#: includes/class-rest.php:639
 msgid "Item activated."
 msgstr ""
 
-#: admin/class-admin.php:658 includes/class-rest.php:633
+#: admin/class-admin.php:678
+#: includes/class-rest.php:639
 msgid "Item deactivated."
 msgstr ""
 
-#: admin/class-admin.php:723 admin/class-admin.php:878 admin/class-admin.php:933 admin/class-admin.php:966 includes/class-rest.php:450 includes/class-rest.php:478
-msgid "You do not have access to that Area."
-msgstr ""
-
-#: admin/class-admin.php:810 includes/class-rest.php:350
-msgid "Order status updated."
-msgstr ""
-
-#: admin/class-admin.php:815 includes/class-rest.php:355
-msgid "Requester notified by email."
-msgstr ""
-
-#: admin/class-admin.php:830 includes/class-rest.php:380
-msgid "Please enter a note."
-msgstr ""
-
-#: admin/class-admin.php:833 includes/class-rest.php:385
-msgid "Note added."
-msgstr ""
-
-#: admin/class-admin.php:844 includes/class-rest.php:408
-msgid "Notification resent."
-msgstr ""
-
-#: admin/class-admin.php:856 includes/class-rest.php:427
-msgid "Please write a message to send."
-msgstr ""
-
-#: admin/class-admin.php:859 includes/class-rest.php:435
-msgid "Email sent to requester."
-msgstr ""
-
-#: admin/class-admin.php:908
-msgid "The uploaded file is too large (maximum 2 MB)."
-msgstr ""
-
-#: admin/class-admin.php:913
-msgid "Please upload a .json file."
-msgstr ""
-
-#: admin/class-admin.php:929
-msgid "You do not have permission to import inventory."
-msgstr ""
-
-#: admin/class-admin.php:939 admin/class-admin.php:969
-msgid "You may only import into catalogs for your own Areas."
-msgstr ""
-
-#: admin/class-admin.php:962
-msgid "The import preview expired or was not confirmed. Please preview the import again."
-msgstr ""
-
-#: admin/class-admin.php:976
-#, php-format
-msgid "Import complete. Created: %1$d. Updated: %2$d. Deactivated: %3$d. Failed: %4$d."
-msgstr ""
-
-#: admin/class-admin.php:1017
-msgid "The Root Server URL is not a valid http(s) URL."
-msgstr ""
-
-#: admin/class-admin.php:1041
-msgid "BMLT settings saved."
-msgstr ""
-
-#: admin/class-admin.php:1071
-msgid "Areas saved, but meetings could not be loaded from BMLT:"
-msgstr ""
-
-#: admin/class-admin.php:1074
-#, php-format
-msgid "Saved %1$d Area(s). %2$d meetings loaded from BMLT."
-msgstr ""
-
-#: admin/class-admin.php:1095
-msgid "Refresh failed — cached BMLT data is still being used:"
-msgstr ""
-
-#: admin/class-admin.php:1095
-msgid "BMLT data refreshed."
-msgstr ""
-
-#: admin/class-admin.php:1110
-msgid "SMTP settings saved."
-msgstr ""
-
-#: admin/class-admin.php:1122
-msgid "The test email could not be sent:"
-msgstr ""
-
-#: admin/class-admin.php:1124
-msgid "Test email sent. Check the inbox (and spam folder) of the recipient."
-msgstr ""
-
-#: admin/class-admin.php:1151
-msgid "Settings saved."
-msgstr ""
-
-#: admin/class-admin.php:1328
-msgid "No user was found with that username or email."
-msgstr ""
-
-#: admin/class-admin.php:1367
-msgid "Permissions saved."
-msgstr ""
-
-#: admin/class-admin.php:1382
-msgid "Cache cleared, but BMLT could not be reached to rebuild it:"
-msgstr ""
-
-#: admin/class-admin.php:1382
-msgid "BMLT cache cleared and rebuilt."
-msgstr ""
-
-#: admin/class-admin.php:1403
-#, php-format
-msgid "Storage verified. Order index rebuilt from %2$d month file(s): %1$d orders. No data was removed."
-msgstr ""
-
-#: admin/class-admin.php:1453
-msgid "Restore not confirmed. Type RESTORE to confirm, or upload the backup again."
-msgstr ""
-
-#: admin/class-admin.php:1458
-msgid "Backup restored. The previous data was saved as a snapshot in the backups folder."
-msgstr ""
-
-#: admin/class-admin.php:1465
-msgid "Please choose a backup file to upload."
-msgstr ""
-
-#: admin/class-admin.php:1469
-msgid "The backup file is too large."
-msgstr ""
-
-#: admin/class-admin.php:1475
-msgid "The backup file is not valid JSON."
-msgstr ""
-
-#: admin/class-admin.php:1497
-#, php-format
-msgid "Migration complete: %1$d items, %2$d inventory records, %3$d orders, %4$d audit entries, %5$d user permission sets. The database tables were left untouched."
-msgstr ""
-
-#: admin/class-admin.php:1508
-msgid "Version 1.0 database tables and options were removed."
-msgstr ""
-
-#: admin/class-admin.php:1518
-msgid "The literature data is now marked as belonging to this site."
-msgstr ""
-
-#: admin/class-admin.php:702
+#. translators: %d: number of items.
+#: admin/class-admin.php:722
 #, php-format
 msgid "%d item updated."
 msgid_plural "%d items updated."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/class-admin.php:705
+#. translators: %d: number of items.
+#: admin/class-admin.php:725
 #, php-format
 msgid "%d item was skipped (items on historical orders cannot be deleted — deactivate them instead)."
 msgid_plural "%d items were skipped (items on historical orders cannot be deleted — deactivate them instead)."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/class-admin.php:772
+#: admin/class-admin.php:743
+#: admin/class-admin.php:904
+#: admin/class-admin.php:959
+#: admin/class-admin.php:992
+#: includes/class-rest.php:451
+#: includes/class-rest.php:481
+msgid "You do not have access to that Area."
+msgstr ""
+
+#. translators: %d: number of rows.
+#: admin/class-admin.php:798
 #, php-format
 msgid "%d inventory record updated."
 msgid_plural "%d inventory records updated."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/class-items-list-table.php:65 admin/views/import-export.php:59 admin/views/order-detail.php:78 public/class-front.php:600 public/views/confirmation.php:63 public/views/confirmation.php:76
+#: admin/class-admin.php:836
+#: includes/class-rest.php:351
+msgid "Order status updated."
+msgstr ""
+
+#: admin/class-admin.php:841
+#: includes/class-rest.php:356
+msgid "Requester notified by email."
+msgstr ""
+
+#: admin/class-admin.php:856
+#: includes/class-rest.php:381
+msgid "Please enter a note."
+msgstr ""
+
+#: admin/class-admin.php:859
+#: includes/class-rest.php:386
+msgid "Note added."
+msgstr ""
+
+#: admin/class-admin.php:870
+#: includes/class-rest.php:409
+msgid "Notification resent."
+msgstr ""
+
+#: admin/class-admin.php:882
+#: includes/class-rest.php:428
+msgid "Please write a message to send."
+msgstr ""
+
+#: admin/class-admin.php:885
+#: includes/class-rest.php:436
+msgid "Email sent to requester."
+msgstr ""
+
+#: admin/class-admin.php:934
+msgid "The uploaded file is too large (maximum 2 MB)."
+msgstr ""
+
+#: admin/class-admin.php:939
+msgid "Please upload a .json file."
+msgstr ""
+
+#: admin/class-admin.php:955
+msgid "You do not have permission to import inventory."
+msgstr ""
+
+#: admin/class-admin.php:965
+#: admin/class-admin.php:995
+msgid "You may only import into catalogs for your own Areas."
+msgstr ""
+
+#: admin/class-admin.php:988
+msgid "The import preview expired or was not confirmed. Please preview the import again."
+msgstr ""
+
+#. translators: 1: created, 2: updated, 3: deactivated, 4: failed.
+#: admin/class-admin.php:1002
+#, php-format
+msgid "Import complete. Created: %1$d. Updated: %2$d. Deactivated: %3$d. Failed: %4$d."
+msgstr ""
+
+#: admin/class-admin.php:1043
+msgid "The Root Server URL was not saved. It must be an http(s) URL of a server on the internet, on port 80, 443 or 8080. (A server on a private network or another port can be allowed with WordPress’s http_request_host_is_external and http_allowed_safe_ports filters.)"
+msgstr ""
+
+#: admin/class-admin.php:1067
+msgid "BMLT settings saved."
+msgstr ""
+
+#: admin/class-admin.php:1097
+msgid "Areas saved, but meetings could not be loaded from BMLT:"
+msgstr ""
+
+#. translators: 1: number of Areas, 2: number of meetings.
+#: admin/class-admin.php:1100
+#, php-format
+msgid "Saved %1$d Area(s). %2$d meetings loaded from BMLT."
+msgstr ""
+
+#: admin/class-admin.php:1121
+msgid "Refresh failed — cached BMLT data is still being used:"
+msgstr ""
+
+#: admin/class-admin.php:1121
+msgid "BMLT data refreshed."
+msgstr ""
+
+#: admin/class-admin.php:1136
+msgid "SMTP settings saved."
+msgstr ""
+
+#: admin/class-admin.php:1148
+msgid "The test email could not be sent:"
+msgstr ""
+
+#: admin/class-admin.php:1150
+msgid "Test email sent. Check the inbox (and spam folder) of the recipient."
+msgstr ""
+
+#: admin/class-admin.php:1177
+msgid "Settings saved."
+msgstr ""
+
+#: admin/class-admin.php:1355
+msgid "No user was found with that username or email."
+msgstr ""
+
+#: admin/class-admin.php:1394
+msgid "Permissions saved."
+msgstr ""
+
+#: admin/class-admin.php:1409
+msgid "Cache cleared, but BMLT could not be reached to rebuild it:"
+msgstr ""
+
+#: admin/class-admin.php:1409
+msgid "BMLT cache cleared and rebuilt."
+msgstr ""
+
+#. translators: 1: orders, 2: month files.
+#: admin/class-admin.php:1431
+#, php-format
+msgid "Storage verified. Order index rebuilt from %2$d month file(s): %1$d orders. No data was removed."
+msgstr ""
+
+#: admin/class-admin.php:1481
+msgid "Restore not confirmed. Type RESTORE to confirm, or upload the backup again."
+msgstr ""
+
+#: admin/class-admin.php:1486
+msgid "Backup restored. The previous data was saved as a snapshot in the backups folder."
+msgstr ""
+
+#: admin/class-admin.php:1493
+msgid "Please choose a backup file to upload."
+msgstr ""
+
+#: admin/class-admin.php:1497
+msgid "The backup file is too large."
+msgstr ""
+
+#: admin/class-admin.php:1503
+msgid "The backup file is not valid JSON."
+msgstr ""
+
+#. translators: 1: items, 2: inventory rows, 3: orders, 4: audit entries, 5: users.
+#: admin/class-admin.php:1525
+#, php-format
+msgid "Migration complete: %1$d items, %2$d inventory records, %3$d orders, %4$d audit entries, %5$d user permission sets. The database tables were left untouched."
+msgstr ""
+
+#: admin/class-admin.php:1536
+msgid "Version 1.0 database tables and options were removed."
+msgstr ""
+
+#: admin/class-admin.php:1546
+msgid "The literature data is now marked as belonging to this site."
+msgstr ""
+
+#: admin/class-items-list-table.php:66
+#: admin/views/import-export.php:60
+#: admin/views/order-detail.php:80
+#: includes/class-email.php:212
+#: public/class-front.php:786
+#: public/views/confirmation.php:64
+#: public/views/confirmation.php:77
+#: public/views/manager.php:170
+#: public/views/print-order.php:83
 msgid "SKU"
 msgstr ""
 
-#: admin/class-items-list-table.php:66 public/views/manager.php:129 public/views/manager.php:184
+#: admin/class-items-list-table.php:67
+#: public/views/manager.php:112
+#: public/views/manager.php:171
+#: public/views/order-form.php:157
 msgid "Title"
 msgstr ""
 
-#: admin/class-items-list-table.php:67 admin/class-items-list-table.php:234 admin/views/item-edit.php:72 public/class-front.php:624 public/views/manager.php:133 public/views/manager.php:185
+#: admin/class-items-list-table.php:68
+#: admin/class-items-list-table.php:235
+#: admin/views/item-edit.php:74
+#: public/class-front.php:811
+#: public/views/manager.php:116
+#: public/views/manager.php:172
 msgid "Category"
 msgstr ""
 
-#: admin/class-items-list-table.php:68 admin/class-items-list-table.php:227 admin/views/item-edit.php:50 public/class-front.php:628 public/views/manager.php:91 public/views/manager.php:114
+#: admin/class-items-list-table.php:69
+#: admin/class-items-list-table.php:228
+#: admin/views/item-edit.php:52
+#: public/class-front.php:815
+#: public/views/manager.php:74
+#: public/views/manager.php:97
+#: public/views/manager.php:173
 msgid "Catalog"
 msgstr ""
 
-#: admin/class-items-list-table.php:69 admin/views/import-export.php:64 admin/views/inventory.php:66 public/class-front.php:623 public/views/manager.php:69 public/views/manager.php:187
+#: admin/class-items-list-table.php:70
+#: admin/views/import-export.php:65
+#: admin/views/inventory.php:74
+#: admin/views/inventory.php:102
+#: public/class-front.php:810
+#: public/views/manager.php:174
+#: public/views/order-form.php:170
+#: public/views/order-form.php:199
+#: public/views/review.php:83
+#: public/views/review.php:98
 msgid "Price"
 msgstr ""
 
-#: admin/class-items-list-table.php:70 admin/class-items-list-table.php:240 admin/class-orders-list-table.php:92 admin/views/dashboard.php:81 admin/views/dashboard.php:106 admin/views/inventory.php:73
+#: admin/class-items-list-table.php:71
+#: admin/class-items-list-table.php:241
+#: admin/class-orders-list-table.php:93
+#: admin/views/dashboard.php:82
+#: admin/views/dashboard.php:107
+#: admin/views/inventory.php:76
+#: admin/views/inventory.php:109
+#: admin/views/item-edit.php:110
+#: admin/views/order-detail.php:63
+#: public/class-front.php:800
+#: public/views/manager.php:176
+#: public/views/orders-app.php:31
+#: public/views/orders-app.php:71
+#: public/views/orders-app.php:95
+#: public/views/print-order.php:70
 msgid "Status"
 msgstr ""
 
-#: admin/class-items-list-table.php:71 public/class-front.php:627 public/views/manager.php:188
+#: admin/class-items-list-table.php:72
+#: public/class-front.php:814
+#: public/views/manager.php:175
 msgid "Sort"
 msgstr ""
 
-#: admin/class-items-list-table.php:98 admin/class-items-list-table.php:184 public/class-front.php:580
+#: admin/class-items-list-table.php:99
+#: admin/class-items-list-table.php:185
+#: public/class-front.php:766
 msgid "Activate"
 msgstr ""
 
-#: admin/class-items-list-table.php:99 admin/class-items-list-table.php:182 public/class-front.php:581
+#: admin/class-items-list-table.php:100
+#: admin/class-items-list-table.php:183
+#: public/class-front.php:767
 msgid "Deactivate"
 msgstr ""
 
-#: admin/class-items-list-table.php:100
+#: admin/class-items-list-table.php:101
 msgid "Delete (only never-ordered items)"
 msgstr ""
 
-#: admin/class-items-list-table.php:146 public/class-front.php:632
+#: admin/class-items-list-table.php:147
+#: public/class-front.php:819
 msgid "No literature items found."
 msgstr ""
 
-#: admin/class-items-list-table.php:160
+#. translators: %s: item name.
+#: admin/class-items-list-table.php:161
 #, php-format
 msgid "Select %s"
 msgstr ""
 
-#: admin/class-items-list-table.php:179 public/class-front.php:578
+#: admin/class-items-list-table.php:180
+#: public/class-front.php:764
 msgid "Edit"
 msgstr ""
 
-#: admin/class-items-list-table.php:187
+#: admin/class-items-list-table.php:188
 msgid "Permanently delete this item?"
 msgstr ""
 
-#: admin/class-items-list-table.php:187 public/class-front.php:579
+#: admin/class-items-list-table.php:188
+#: public/class-front.php:765
 msgid "Delete"
 msgstr ""
 
-#: admin/class-items-list-table.php:210 admin/class-items-list-table.php:242 admin/views/import-export.php:65 public/class-front.php:625
+#: admin/class-items-list-table.php:211
+#: admin/class-items-list-table.php:243
+#: admin/views/import-export.php:66
+#: public/class-front.php:812
 msgid "Active"
 msgstr ""
 
-#: admin/class-items-list-table.php:228
+#: admin/class-items-list-table.php:229
 msgid "All catalogs"
 msgstr ""
 
-#: admin/class-items-list-table.php:229 admin/views/item-edit.php:54 public/class-front.php:634 public/views/manager.php:94 public/views/manager.php:117 includes/class-catalog.php:496
+#: admin/class-items-list-table.php:230
+#: admin/views/item-edit.php:56
+#: includes/class-catalog.php:506
+#: public/class-front.php:821
+#: public/views/manager.php:77
+#: public/views/manager.php:100
 msgid "Shared (all Areas)"
 msgstr ""
 
-#: admin/class-items-list-table.php:235 public/views/order-form.php:156
+#: admin/class-items-list-table.php:236
 msgid "All categories"
 msgstr ""
 
-#: admin/class-items-list-table.php:241
+#: admin/class-items-list-table.php:242
 msgid "Active and inactive"
 msgstr ""
 
-#: admin/class-items-list-table.php:243 public/class-front.php:259 public/class-front.php:626 includes/class-helpers.php:168
+#: admin/class-items-list-table.php:244
+#: includes/class-helpers.php:182
+#: public/class-front.php:341
+#: public/class-front.php:813
 msgid "Inactive"
 msgstr ""
 
-#: admin/class-items-list-table.php:245 admin/class-orders-list-table.php:256
+#: admin/class-items-list-table.php:246
+#: admin/class-orders-list-table.php:257
 msgid "Filter"
 msgstr ""
 
-#: admin/class-orders-list-table.php:82 admin/views/dashboard.php:77 public/class-front.php:616 public/views/orders-app.php:87
+#: admin/class-orders-list-table.php:83
+#: admin/views/dashboard.php:78
+#: public/class-front.php:802
+#: public/views/orders-app.php:88
 msgid "Order #"
 msgstr ""
 
-#: admin/class-orders-list-table.php:83 admin/views/dashboard.php:78 public/class-front.php:613 public/views/orders-app.php:88
+#: admin/class-orders-list-table.php:84
+#: admin/views/dashboard.php:79
+#: public/class-front.php:799
+#: public/views/orders-app.php:89
 msgid "Date"
 msgstr ""
 
-#: admin/class-orders-list-table.php:84 admin/views/bmlt.php:23 admin/views/dashboard.php:42 admin/views/dashboard.php:104 admin/views/inventory.php:28 admin/views/order-detail.php:63
+#: admin/class-orders-list-table.php:85
+#: admin/views/bmlt.php:24
+#: admin/views/dashboard.php:43
+#: admin/views/dashboard.php:105
+#: admin/views/inventory.php:30
+#: admin/views/order-detail.php:65
+#: includes/class-privacy.php:86
+#: includes/class-settings.php:464
+#: public/class-front.php:795
+#: public/views/confirmation.php:48
+#: public/views/manager.php:47
+#: public/views/orders-app.php:21
+#: public/views/orders-app.php:70
+#: public/views/orders-app.php:90
+#: public/views/print-order.php:71
+#: public/views/review.php:64
 msgid "Area"
 msgstr ""
 
-#: admin/class-orders-list-table.php:85 admin/views/dashboard.php:79 admin/views/order-detail.php:64 public/class-front.php:608 public/views/confirmation.php:48 public/views/order-form.php:99
+#. translators: %d: ID.
+#: admin/class-orders-list-table.php:86
+#: admin/views/dashboard.php:80
+#: admin/views/order-detail.php:66
+#: includes/class-privacy.php:90
+#: public/class-front.php:794
+#: public/views/confirmation.php:49
+#: public/views/order-form.php:106
+#: public/views/orders-app.php:53
+#: public/views/orders-app.php:69
+#: public/views/orders-app.php:91
+#: public/views/print-order.php:72
+#: public/views/review.php:65
 msgid "Meeting"
 msgstr ""
 
-#: admin/class-orders-list-table.php:86 public/class-front.php:610 public/views/confirmation.php:49 public/views/orders-app.php:91 public/views/print-order.php:72
+#: admin/class-orders-list-table.php:87
+#: public/class-front.php:796
+#: public/views/confirmation.php:50
+#: public/views/orders-app.php:92
+#: public/views/print-order.php:73
 msgid "Contact"
 msgstr ""
 
-#: admin/class-orders-list-table.php:88 admin/views/order-detail.php:66 public/class-front.php:611 public/views/confirmation.php:50 includes/class-privacy.php:97
+#: admin/class-orders-list-table.php:89
+#: admin/views/order-detail.php:68
+#: includes/class-privacy.php:98
+#: public/class-front.php:797
+#: public/views/confirmation.php:51
+#: public/views/review.php:67
 msgid "Phone"
 msgstr ""
 
-#: admin/class-orders-list-table.php:90 admin/views/dashboard.php:80 admin/views/order-detail.php:110 public/class-front.php:607 public/views/confirmation.php:104 public/views/order-form.php:240
+#: admin/class-orders-list-table.php:91
+#: admin/views/dashboard.php:81
+#: admin/views/order-detail.php:112
+#: includes/class-email.php:229
+#: includes/class-email.php:259
+#: includes/class-privacy.php:114
+#: public/class-front.php:793
+#: public/views/confirmation.php:105
+#: public/views/order-form.php:228
+#: public/views/orders-app.php:93
+#: public/views/print-order.php:115
+#: public/views/review.php:128
 msgid "Total"
 msgstr ""
 
-#: admin/class-orders-list-table.php:91 public/class-front.php:258 includes/class-helpers.php:160
+#: admin/class-orders-list-table.php:92
+#: includes/class-helpers.php:174
+#: public/class-front.php:340
 msgid "Special Order"
 msgstr ""
 
-#: admin/class-orders-list-table.php:159
+#: admin/class-orders-list-table.php:160
 msgid "No orders found."
 msgstr ""
 
-#: admin/class-orders-list-table.php:171
+#: admin/class-orders-list-table.php:172
 msgid "View / manage"
 msgstr ""
 
-#: admin/class-orders-list-table.php:200 admin/views/import-export.php:88 admin/views/status.php:66 public/class-front.php:574
+#: admin/class-orders-list-table.php:201
+#: admin/views/import-export.php:94
+#: admin/views/status.php:67
+#: public/class-front.php:760
+#: public/views/review.php:108
 msgid "No"
 msgstr ""
 
-#: admin/class-orders-list-table.php:230
+#: admin/class-orders-list-table.php:231
 msgid "Filter by Area"
 msgstr ""
 
-#: admin/class-orders-list-table.php:231 admin/views/settings.php:77
+#: admin/class-orders-list-table.php:232
+#: admin/views/settings.php:78
 msgid "All Areas"
 msgstr ""
 
-#: admin/class-orders-list-table.php:237
+#: admin/class-orders-list-table.php:238
 msgid "Filter by status"
 msgstr ""
 
-#: admin/class-orders-list-table.php:238 public/views/orders-app.php:32
+#: admin/class-orders-list-table.php:239
+#: public/views/orders-app.php:33
 msgid "Any status"
 msgstr ""
 
-#: admin/class-orders-list-table.php:239
+#: admin/class-orders-list-table.php:240
 msgid "Open"
 msgstr ""
 
-#: admin/class-orders-list-table.php:244 public/views/orders-app.php:40
+#: admin/class-orders-list-table.php:245
+#: public/views/orders-app.php:41
 msgid "Special orders"
 msgstr ""
 
-#: admin/class-orders-list-table.php:245 public/views/orders-app.php:42
+#: admin/class-orders-list-table.php:246
+#: public/views/orders-app.php:43
 msgid "All orders"
 msgstr ""
 
-#: admin/class-orders-list-table.php:246
+#: admin/class-orders-list-table.php:247
 msgid "Special orders only"
 msgstr ""
 
-#: admin/class-orders-list-table.php:247
+#: admin/class-orders-list-table.php:248
 msgid "No special orders"
 msgstr ""
 
-#: admin/class-orders-list-table.php:249
+#: admin/class-orders-list-table.php:250
 msgid "From"
 msgstr ""
 
-#: admin/class-orders-list-table.php:250
+#: admin/class-orders-list-table.php:251
 msgid "To"
 msgstr ""
 
-#: admin/class-orders-list-table.php:251
+#: admin/class-orders-list-table.php:252
 msgid "Per page"
 msgstr ""
 
-#: admin/views/bmlt.php:24
+#: admin/views/bmlt.php:25
 msgid "Region"
 msgstr ""
 
-#: admin/views/bmlt.php:25
+#: admin/views/bmlt.php:26
 msgid "Zonal Forum"
 msgstr ""
 
-#: admin/views/bmlt.php:26
+#: admin/views/bmlt.php:27
 msgid "Metro Area"
 msgstr ""
 
-#: admin/views/bmlt.php:27
+#: admin/views/bmlt.php:28
 msgid "Group"
 msgstr ""
 
-#: admin/views/bmlt.php:28
+#: admin/views/bmlt.php:29
 msgid "World Service"
 msgstr ""
 
-#: admin/views/bmlt.php:29
+#: admin/views/bmlt.php:30
 msgid "Local Service Body"
 msgstr ""
 
-#: admin/views/bmlt.php:40
+#: admin/views/bmlt.php:41
 msgid "1. Connect to your BMLT Root Server"
 msgstr ""
 
-#: admin/views/bmlt.php:47
+#: admin/views/bmlt.php:48
 msgid "Root Server URL"
 msgstr ""
 
-#: admin/views/bmlt.php:49
+#: admin/views/bmlt.php:50
 msgid "The base URL of your BMLT Root Server (usually ends in /main_server). The plugin uses the documented JSON client interface at {root}/client_interface/json/."
 msgstr ""
 
-#: admin/views/bmlt.php:52
+#: admin/views/bmlt.php:53
 msgid "API endpoint override (optional)"
 msgstr ""
 
-#: admin/views/bmlt.php:54
+#: admin/views/bmlt.php:55
 msgid "Only needed if your server publishes the JSON interface at a non-standard address."
 msgstr ""
 
-#: admin/views/bmlt.php:57
+#: admin/views/bmlt.php:58
 msgid "Connection timeout (seconds)"
 msgstr ""
 
-#: admin/views/bmlt.php:61
+#: admin/views/bmlt.php:62
 msgid "Cache duration (hours)"
 msgstr ""
 
-#: admin/views/bmlt.php:63
+#: admin/views/bmlt.php:64
 msgid "Meeting data is reused for this long before BMLT is queried again. If BMLT is unreachable, the last good data keeps being used."
 msgstr ""
 
-#: admin/views/bmlt.php:66
+#: admin/views/bmlt.php:67
 msgid "Automatic refresh (hours)"
 msgstr ""
 
-#: admin/views/bmlt.php:68
+#: admin/views/bmlt.php:69
 msgid "Background refresh interval using WordPress cron."
 msgstr ""
 
-#: admin/views/bmlt.php:71
+#: admin/views/bmlt.php:72
 msgid "Debug mode"
 msgstr ""
 
-#: admin/views/bmlt.php:72
+#: admin/views/bmlt.php:73
 msgid "Log BMLT requests to the PHP error log when WP_DEBUG_LOG is enabled"
 msgstr ""
 
-#: admin/views/bmlt.php:75
+#: admin/views/bmlt.php:76
 msgid "Save BMLT settings"
 msgstr ""
 
-#: admin/views/bmlt.php:82
+#: admin/views/bmlt.php:83
 msgid "Test BMLT Connection"
 msgstr ""
 
-#: admin/views/bmlt.php:87 admin/views/status.php:186
+#: admin/views/bmlt.php:88
+#: admin/views/status.php:187
 msgid "Refresh BMLT Data"
 msgstr ""
 
-#: admin/views/bmlt.php:107
+#. translators: 1: last success, 2: last error.
+#: admin/views/bmlt.php:108
 #, php-format
 msgid "Last successful contact: %1$s. Last error: %2$s"
 msgstr ""
 
-#: admin/views/bmlt.php:108 admin/views/bmlt.php:166 admin/views/status.php:54
+#: admin/views/bmlt.php:109
+#: admin/views/bmlt.php:167
+#: admin/views/status.php:55
 msgid "never"
 msgstr ""
 
-#: admin/views/bmlt.php:109 admin/views/settings.php:132 admin/views/status.php:55 admin/views/status.php:58 admin/views/status.php:65
+#: admin/views/bmlt.php:110
+#: admin/views/settings.php:133
+#: admin/views/status.php:56
+#: admin/views/status.php:59
+#: admin/views/status.php:66
 msgid "none"
 msgstr ""
 
-#: admin/views/bmlt.php:118
+#: admin/views/bmlt.php:119
 msgid "2. Choose the Areas this site manages"
 msgstr ""
 
-#: admin/views/bmlt.php:121
+#: admin/views/bmlt.php:122
 msgid "No service bodies are loaded yet. Save the Root Server URL and click “Test BMLT Connection” or “Refresh BMLT Data”."
 msgstr ""
 
-#: admin/views/bmlt.php:126
+#. translators: %s: date.
+#: admin/views/bmlt.php:127
 #, php-format
 msgid "Service bodies loaded from BMLT on %s. Each selected Area gets its own inventory, email routing and (optionally) its own catalog."
 msgstr ""
 
-#: admin/views/bmlt.php:132
+#: admin/views/bmlt.php:133
 msgid "Filter list"
 msgstr ""
 
-#: admin/views/bmlt.php:134
+#: admin/views/bmlt.php:135
 msgid "Service bodies"
 msgstr ""
 
-#: admin/views/bmlt.php:149
-msgid "Save selected Areas"
-msgstr ""
-
-#: admin/views/bmlt.php:151
-msgid "Next: configure literature-worker emails for each Area →"
-msgstr ""
-
-#: admin/views/bmlt.php:157 admin/views/status.php:59
-msgid "Cached meetings"
-msgstr ""
-
-#: admin/views/bmlt.php:164
-#, php-format
-msgid "%1$d meetings cached (fetched %2$s, %3$s)."
-msgstr ""
-
-#: admin/views/bmlt.php:167
-msgid "due for refresh — cached data is being used"
-msgstr ""
-
-#: admin/views/bmlt.php:167 admin/views/status.php:56
-msgid "fresh"
-msgstr ""
-
-#: admin/views/bmlt.php:143
+#. translators: %d: meetings.
+#: admin/views/bmlt.php:144
 #, php-format
 msgid "%d meeting"
 msgid_plural "%d meetings"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/views/dashboard.php:25
-msgid "New orders"
+#: admin/views/bmlt.php:150
+msgid "Save selected Areas"
+msgstr ""
+
+#: admin/views/bmlt.php:152
+msgid "Next: configure literature-worker emails for each Area →"
+msgstr ""
+
+#: admin/views/bmlt.php:158
+#: admin/views/status.php:60
+msgid "Cached meetings"
+msgstr ""
+
+#. translators: 1: count, 2: date, 3: freshness.
+#: admin/views/bmlt.php:165
+#, php-format
+msgid "%1$d meetings cached (fetched %2$s, %3$s)."
+msgstr ""
+
+#: admin/views/bmlt.php:168
+msgid "due for refresh — cached data is being used"
+msgstr ""
+
+#. translators: 1: count, 2: date, 3: freshness.
+#: admin/views/bmlt.php:168
+#: admin/views/status.php:57
+msgid "fresh"
 msgstr ""
 
 #: admin/views/dashboard.php:26
-msgid "Open special orders"
+msgid "New orders"
 msgstr ""
 
 #: admin/views/dashboard.php:27
-msgid "Waiting for fulfillment"
+msgid "Open special orders"
 msgstr ""
 
 #: admin/views/dashboard.php:28
-msgid "Ready for delivery"
+msgid "Waiting for fulfillment"
 msgstr ""
 
 #: admin/views/dashboard.php:29
-msgid "Orders, last 7 days"
+msgid "Ready for delivery"
 msgstr ""
 
 #: admin/views/dashboard.php:30
-msgid "Orders, last 30 days"
+msgid "Orders, last 7 days"
 msgstr ""
 
 #: admin/views/dashboard.php:31
-msgid "Orders, last 45 days"
+msgid "Orders, last 30 days"
 msgstr ""
 
 #: admin/views/dashboard.php:32
-msgid "Low-stock items"
+msgid "Orders, last 45 days"
 msgstr ""
 
 #: admin/views/dashboard.php:33
+msgid "Low-stock items"
+msgstr ""
+
+#: admin/views/dashboard.php:34
 msgid "Out-of-stock items"
 msgstr ""
 
-#: admin/views/dashboard.php:44 public/views/orders-app.php:22
+#: admin/views/dashboard.php:45
+#: public/views/orders-app.php:23
 msgid "All my Areas"
 msgstr ""
 
-#: admin/views/dashboard.php:49 admin/views/inventory.php:34 admin/views/inventory.php:44
+#: admin/views/dashboard.php:50
+#: admin/views/inventory.php:36
+#: admin/views/inventory.php:46
 msgid "Show"
 msgstr ""
 
-#: admin/views/dashboard.php:54 admin/views/inventory.php:24
+#: admin/views/dashboard.php:55
+#: admin/views/inventory.php:26
 msgid "No Areas are configured or assigned to you yet."
 msgstr ""
 
-#: admin/views/dashboard.php:74
+#: admin/views/dashboard.php:75
 msgid "Recent orders"
 msgstr ""
 
-#: admin/views/dashboard.php:85
+#: admin/views/dashboard.php:86
 msgid "No orders yet."
 msgstr ""
 
-#: admin/views/dashboard.php:100
+#: admin/views/dashboard.php:101
 msgid "Low and out-of-stock items"
 msgstr ""
 
-#: admin/views/dashboard.php:103 admin/views/inventory.php:65 public/views/manager.php:68
+#: admin/views/dashboard.php:104
+#: admin/views/inventory.php:73
+#: admin/views/inventory.php:101
+#: public/views/order-form.php:169
+#: public/views/review.php:80
+#: public/views/review.php:92
 msgid "Item"
 msgstr ""
 
-#: admin/views/dashboard.php:105 admin/views/inventory.php:70 public/class-front.php:620 public/views/manager.php:72
+#: admin/views/dashboard.php:106
+#: admin/views/inventory.php:106
+#: public/class-front.php:806
 msgid "Available"
 msgstr ""
 
-#: admin/views/dashboard.php:110
+#: admin/views/dashboard.php:111
 msgid "Everything is in stock."
 msgstr ""
 
-#: admin/views/dashboard.php:123
+#: admin/views/dashboard.php:124
 msgid "Recent inventory adjustments"
 msgstr ""
 
-#: admin/views/import-export.php:31
+#: admin/views/import-export.php:32
 msgid "Import preview — nothing has been changed yet"
 msgstr ""
 
-#: admin/views/import-export.php:37
+#. translators: 1: Area name, 2: updates, 3: unchanged, 4: invalid.
+#: admin/views/import-export.php:38
 #, php-format
 msgid "Inventory for %1$s: %2$d to update, %3$d unchanged, %4$d invalid."
 msgstr ""
 
-#: admin/views/import-export.php:40
+#. translators: 1: catalog, 2: new, 3: updates, 4: unchanged, 5: skipped, 6: invalid.
+#: admin/views/import-export.php:41
 #, php-format
 msgid "Catalog “%1$s”: %2$d new, %3$d to update, %4$d unchanged, %5$d skipped (already exist), %6$d invalid."
 msgstr ""
 
-#: admin/views/import-export.php:46
+#: admin/views/import-export.php:47
 msgid "These rows failed validation and will not be imported:"
 msgstr ""
 
-#: admin/views/import-export.php:58
+#: admin/views/import-export.php:59
 msgid "Action"
 msgstr ""
 
-#: admin/views/import-export.php:60 public/views/order-form.php:125
+#: admin/views/import-export.php:61
+#: public/views/order-form.php:132
+#: public/views/review.php:66
 msgid "Name"
 msgstr ""
 
-#: admin/views/import-export.php:62
-msgid "On hand: current → new"
-msgstr ""
-
-#: admin/views/import-export.php:71
-msgid "Create"
+#: admin/views/import-export.php:63
+msgid "On hand: current → new / special order"
 msgstr ""
 
 #: admin/views/import-export.php:72
-msgid "Update"
+msgid "Create"
 msgstr ""
 
 #: admin/views/import-export.php:73
-msgid "No change"
+msgid "Update"
 msgstr ""
 
 #: admin/views/import-export.php:74
+msgid "No change"
+msgstr ""
+
+#: admin/views/import-export.php:75
 msgid "Skip (exists)"
 msgstr ""
 
-#: admin/views/import-export.php:88 admin/views/status.php:45 public/class-front.php:573
+#. translators: %s: item.
+#: admin/views/import-export.php:87
+#: admin/views/inventory.php:89
+#: public/class-front.php:756
+#: public/views/order-form.php:171
+#: public/views/orders-app.php:94
+#: public/views/review.php:86
+#: public/views/review.php:101
+msgid "Special order"
+msgstr ""
+
+#: admin/views/import-export.php:87
+msgid "Not a special order"
+msgstr ""
+
+#: admin/views/import-export.php:94
+#: admin/views/status.php:46
+#: public/class-front.php:759
 msgid "Yes"
 msgstr ""
 
-#: admin/views/import-export.php:97
+#: admin/views/import-export.php:103
 msgid "These items are not in the file and will be deactivated:"
 msgstr ""
 
-#: admin/views/import-export.php:109
+#: admin/views/import-export.php:115
 msgid "I have reviewed the changes above and want to apply them."
 msgstr ""
 
-#: admin/views/import-export.php:111
+#: admin/views/import-export.php:117
 msgid "Apply import"
 msgstr ""
 
-#: admin/views/import-export.php:112
+#: admin/views/import-export.php:118
 msgid "Discard"
 msgstr ""
 
-#: admin/views/import-export.php:122
+#: admin/views/import-export.php:128
 msgid "Export"
 msgstr ""
 
-#: admin/views/import-export.php:129
+#: admin/views/import-export.php:135
 msgid "Catalog to export"
 msgstr ""
 
-#: admin/views/import-export.php:132
+#: admin/views/import-export.php:138
 msgid "Everything (all catalogs)"
 msgstr ""
 
-#: admin/views/import-export.php:134
+#: admin/views/import-export.php:140
 msgid "Shared catalog"
 msgstr ""
 
-#: admin/views/import-export.php:136
+#. translators: %s: Area.
+#: admin/views/import-export.php:142
 #, php-format
 msgid "%s catalog only"
 msgstr ""
 
-#: admin/views/import-export.php:141
+#: admin/views/import-export.php:147
 msgid "Download catalog JSON"
 msgstr ""
 
-#: admin/views/import-export.php:142
+#: admin/views/import-export.php:148
 msgid "Copy catalog to editor"
 msgstr ""
 
-#: admin/views/import-export.php:153
+#: admin/views/import-export.php:159
 msgid "Area inventory to export"
 msgstr ""
 
-#: admin/views/import-export.php:161
+#: admin/views/import-export.php:167
 msgid "Download inventory JSON"
 msgstr ""
 
-#: admin/views/import-export.php:162
+#: admin/views/import-export.php:168
 msgid "Copy first Area’s inventory to editor"
 msgstr ""
 
-#: admin/views/import-export.php:172
+#: admin/views/import-export.php:178
 msgid "Import"
 msgstr ""
 
-#: admin/views/import-export.php:178
+#: admin/views/import-export.php:184
 msgid "What to import"
 msgstr ""
 
-#: admin/views/import-export.php:179 public/views/manager.php:180
+#: admin/views/import-export.php:185
+#: public/views/manager.php:167
 msgid "Literature catalog"
 msgstr ""
 
-#: admin/views/import-export.php:181
+#: admin/views/import-export.php:187
 msgid "Area inventory"
 msgstr ""
 
-#: admin/views/import-export.php:185
+#: admin/views/import-export.php:191
 msgid "Import catalog into"
 msgstr ""
 
-#: admin/views/import-export.php:188
+#: admin/views/import-export.php:194
 msgid "Shared catalog (all Areas)"
 msgstr ""
 
-#: admin/views/import-export.php:194
+#: admin/views/import-export.php:200
 msgid "Update existing items with the same SKU"
 msgstr ""
 
-#: admin/views/import-export.php:195
+#: admin/views/import-export.php:201
 msgid "Deactivate items in this catalog that are missing from the file"
 msgstr ""
 
-#: admin/views/import-export.php:199
+#: admin/views/import-export.php:205
 msgid "Import inventory into Area"
 msgstr ""
 
-#: admin/views/import-export.php:208
+#: admin/views/import-export.php:214
 msgid "Upload a JSON file"
 msgstr ""
 
-#: admin/views/import-export.php:212
+#: admin/views/import-export.php:218
 msgid "…or paste JSON here"
 msgstr ""
 
-#: admin/views/import-export.php:217
+#: admin/views/import-export.php:223
 msgid "Validate JSON"
 msgstr ""
 
-#: admin/views/import-export.php:218
+#: admin/views/import-export.php:224
 msgid "Copy JSON"
 msgstr ""
 
-#: admin/views/import-export.php:219
+#: admin/views/import-export.php:225
 msgid "Preview import"
 msgstr ""
 
-#: admin/views/import-export.php:221
+#: admin/views/import-export.php:227
 msgid "Imports are always previewed first. Files must use the BMLT Literature Manager format (format + version fields). Only plain values are accepted; no code or objects are ever executed."
 msgstr ""
 
-#: admin/views/inventory.php:36
+#: admin/views/inventory.php:38
 msgid "All items"
 msgstr ""
 
-#: admin/views/inventory.php:37 public/views/print-order.php:102
+#: admin/views/inventory.php:39
+#: public/views/print-order.php:103
 msgid "In stock"
 msgstr ""
 
-#: admin/views/inventory.php:38
+#: admin/views/inventory.php:40
 msgid "Low stock"
 msgstr ""
 
-#: admin/views/inventory.php:39
+#: admin/views/inventory.php:41
 msgid "Out of stock / special order"
 msgstr ""
 
-#: admin/views/inventory.php:40
+#: admin/views/inventory.php:42
 msgid "Inactive items"
 msgstr ""
 
-#: admin/views/inventory.php:42 public/views/manager.php:54 public/views/manager.php:101
+#: admin/views/inventory.php:44
+#: public/views/manager.php:55
+#: public/views/manager.php:84
 msgid "Search"
 msgstr ""
 
-#: admin/views/inventory.php:51
+#. translators: %s: Area name.
+#: admin/views/inventory.php:53
 #, php-format
 msgid "Inventory below applies only to %s. Other Areas keep their own separate inventory."
 msgstr ""
 
-#: admin/views/inventory.php:55
+#: admin/views/inventory.php:58
 msgid "Set “On hand” to the counted quantity, or use “Adjust by” for receipts (+) and losses (−). Reserved quantities belong to open orders."
 msgstr ""
 
-#: admin/views/inventory.php:67 public/class-front.php:618 public/views/manager.php:70
-msgid "On hand"
+#: admin/views/inventory.php:60
+msgid "This Area does not track quantities."
 msgstr ""
 
-#: admin/views/inventory.php:68
-msgid "Adjust by"
+#: admin/views/inventory.php:61
+msgid "Tick the items that are special orders for this Area. Change this under Settings → Area Configuration."
 msgstr ""
 
-#: admin/views/inventory.php:69 public/class-front.php:619 public/views/manager.php:71
-msgid "Reserved"
+#: admin/views/inventory.php:75
+#: public/class-front.php:808
+msgid "Special order for this Area"
 msgstr ""
 
-#: admin/views/inventory.php:71 public/class-front.php:621 public/views/manager.php:73
-msgid "Low-stock threshold"
-msgstr ""
-
-#: admin/views/inventory.php:72
-msgid "Reorder qty"
-msgstr ""
-
-#: admin/views/inventory.php:74 admin/views/order-detail.php:68 public/class-front.php:615 public/views/confirmation.php:54 public/views/print-order.php:75 includes/class-privacy.php:105
-msgid "Notes"
-msgstr ""
-
-#: admin/views/inventory.php:78
+#: admin/views/inventory.php:80
+#: admin/views/inventory.php:114
 msgid "No literature items found. Add items under Literature → Items."
 msgstr ""
 
-#: admin/views/inventory.php:87
+#. translators: %s: item.
+#: admin/views/inventory.php:89
+#, php-format
+msgid "Special order: %s"
+msgstr ""
+
+#: admin/views/inventory.php:103
+#: public/class-front.php:804
+msgid "On hand"
+msgstr ""
+
+#: admin/views/inventory.php:104
+msgid "Adjust by"
+msgstr ""
+
+#: admin/views/inventory.php:105
+#: public/class-front.php:805
+msgid "Reserved"
+msgstr ""
+
+#: admin/views/inventory.php:107
+#: public/class-front.php:807
+msgid "Low-stock threshold"
+msgstr ""
+
+#: admin/views/inventory.php:108
+msgid "Reorder qty"
+msgstr ""
+
+#: admin/views/inventory.php:110
+#: admin/views/order-detail.php:70
+#: includes/class-privacy.php:106
+#: includes/class-settings.php:470
+#: public/class-front.php:801
+#: public/views/confirmation.php:55
+#: public/views/print-order.php:76
+#: public/views/review.php:70
+msgid "Notes"
+msgstr ""
+
+#: admin/views/inventory.php:123
 msgid "Area catalog"
 msgstr ""
 
-#: admin/views/inventory.php:94
+#. translators: %s: item.
+#: admin/views/inventory.php:130
 #, php-format
 msgid "Decrease on hand for %s"
 msgstr ""
 
-#: admin/views/inventory.php:95
+#. translators: %s: item.
+#: admin/views/inventory.php:131
 #, php-format
 msgid "On hand for %s"
 msgstr ""
 
-#: admin/views/inventory.php:96
+#. translators: %s: item.
+#: admin/views/inventory.php:132
 #, php-format
 msgid "Increase on hand for %s"
 msgstr ""
 
-#: admin/views/inventory.php:99
+#. translators: %s: item.
+#: admin/views/inventory.php:135
 #, php-format
 msgid "Adjust %s by"
 msgstr ""
 
-#: admin/views/inventory.php:104
+#. translators: %s: item.
+#: admin/views/inventory.php:140
 #, php-format
 msgid "Low-stock threshold for %s"
 msgstr ""
 
-#: admin/views/inventory.php:108
+#. translators: %s: item.
+#: admin/views/inventory.php:144
 #, php-format
 msgid "Reorder quantity for %s"
 msgstr ""
 
-#: admin/views/inventory.php:113
+#. translators: %s: item.
+#: admin/views/inventory.php:149
 #, php-format
 msgid "Inventory notes for %s"
 msgstr ""
 
-#: admin/views/inventory.php:121
+#: admin/views/inventory.php:158
 msgid "Adjustment reason"
 msgstr ""
 
-#: admin/views/inventory.php:122
+#: admin/views/inventory.php:159
 msgid "e.g. Monthly count, received NAWS shipment, damaged copies"
 msgstr ""
 
-#: admin/views/inventory.php:124
+#: admin/views/inventory.php:161
 msgid "Save inventory changes"
 msgstr ""
 
-#: admin/views/inventory.php:127
+#: admin/views/inventory.php:164
 msgid "Inventory history"
 msgstr ""
 
-#: admin/views/item-edit.php:40
+#: admin/views/item-edit.php:42
 msgid "Edit Literature Item"
 msgstr ""
 
-#: admin/views/item-edit.php:40
+#: admin/views/item-edit.php:42
 msgid "Add Literature Item"
 msgstr ""
 
-#: admin/views/item-edit.php:41
+#: admin/views/item-edit.php:43
 msgid "← All items"
 msgstr ""
 
-#: admin/views/item-edit.php:60
+#: admin/views/item-edit.php:62
 msgid "Shared items appear on every Area’s order form. Area items appear only for meetings in that Area and can carry Area-specific pricing."
 msgstr ""
 
-#: admin/views/item-edit.php:64 public/views/manager.php:125
+#: admin/views/item-edit.php:66
+#: public/views/manager.php:108
 msgid "SKU / item number"
 msgstr ""
 
-#: admin/views/item-edit.php:68
+#: admin/views/item-edit.php:70
 msgid "Literature name"
 msgstr ""
 
-#: admin/views/item-edit.php:79 admin/views/order-detail.php:81 public/views/confirmation.php:67 public/views/confirmation.php:80 public/views/manager.php:142 public/views/order-form.php:205
+#: admin/views/item-edit.php:81
+#: admin/views/order-detail.php:83
+#: public/views/confirmation.php:68
+#: public/views/confirmation.php:81
+#: public/views/manager.php:125
+#: public/views/print-order.php:87
 msgid "Unit price"
 msgstr ""
 
-#: admin/views/item-edit.php:80
+#: admin/views/item-edit.php:82
 msgid "For example 12.50. Price changes apply to new orders only; existing orders keep their price."
 msgstr ""
 
-#: admin/views/item-edit.php:83 public/views/manager.php:159
+#: admin/views/item-edit.php:85
+#: public/views/manager.php:146
 msgid "Short description"
 msgstr ""
 
-#: admin/views/item-edit.php:87 public/views/manager.php:163
+#: admin/views/item-edit.php:89
+#: public/views/manager.php:150
 msgid "Long description"
 msgstr ""
 
-#: admin/views/item-edit.php:88
+#: admin/views/item-edit.php:90
 msgid "Basic HTML is allowed."
 msgstr ""
 
-#: admin/views/item-edit.php:91 public/views/manager.php:146
+#: admin/views/item-edit.php:93
+#: public/views/manager.php:129
 msgid "Sort order"
 msgstr ""
 
-#: admin/views/item-edit.php:92
+#: admin/views/item-edit.php:94
 msgid "Lower numbers appear first."
 msgstr ""
 
-#: admin/views/item-edit.php:95
+#: admin/views/item-edit.php:97
 msgid "Image URL (optional)"
 msgstr ""
 
-#: admin/views/item-edit.php:99
+#: admin/views/item-edit.php:101
+msgid "Reference link (optional)"
+msgstr ""
+
+#: admin/views/item-edit.php:103
+msgid "A page about this item, such as its official reading page on na.org. Shown on the order form as a “View on …” link that opens in a new tab."
+msgstr ""
+
+#: admin/views/item-edit.php:106
 msgid "NAWS product ID (optional)"
 msgstr ""
 
-#: admin/views/item-edit.php:104 public/views/manager.php:168
+#: admin/views/item-edit.php:111
+#: public/views/manager.php:155
 msgid "Active (available for ordering)"
 msgstr ""
 
-#: admin/views/item-edit.php:107 public/views/manager.php:172
+#: admin/views/item-edit.php:126
+#: admin/views/item-edit.php:129
+msgid "Special order by Area"
+msgstr ""
+
+#: admin/views/item-edit.php:135
+msgid "For Areas that don’t track quantities: tick an Area to show this item as a special order there. Areas that track quantities decide automatically from stock."
+msgstr ""
+
+#: admin/views/item-edit.php:141
+#: public/views/manager.php:159
 msgid "Save item"
 msgstr ""
 
-#: admin/views/item-edit.php:107
+#: admin/views/item-edit.php:141
 msgid "Add item"
 msgstr ""
 
-#: admin/views/item-edit.php:111
+#: admin/views/item-edit.php:145
 msgid "Change history"
 msgstr ""
 
-#: admin/views/item-edit.php:114 admin/views/partial-audit.php:26
+#: admin/views/item-edit.php:148
+#: admin/views/partial-audit.php:27
 msgid "When"
 msgstr ""
 
-#: admin/views/item-edit.php:115 admin/views/partial-audit.php:27
+#: admin/views/item-edit.php:149
+#: admin/views/partial-audit.php:28
 msgid "Who"
 msgstr ""
 
-#: admin/views/item-edit.php:116 admin/views/partial-audit.php:28
+#: admin/views/item-edit.php:150
+#: admin/views/partial-audit.php:29
 msgid "What"
 msgstr ""
 
-#: admin/views/item-edit.php:117
+#: admin/views/item-edit.php:151
 msgid "Details"
 msgstr ""
 
-#: admin/views/items.php:14
+#: admin/views/items.php:15
 msgid "Add New Item"
 msgstr ""
 
-#: admin/views/items.php:17
+#: admin/views/items.php:18
 msgid "Items on historical orders cannot be deleted; deactivate them instead so past orders stay accurate. Shared items are offered to every Area; Area items are offered only to that Area."
 msgstr ""
 
-#: admin/views/items.php:21
+#: admin/views/items.php:22
 msgid "Search items"
 msgstr ""
 
-#: admin/views/order-detail.php:27
+#: admin/views/order-detail.php:28
 msgid "Reserved at order, deducted when fulfilled"
 msgstr ""
 
-#: admin/views/order-detail.php:28
+#: admin/views/order-detail.php:29
 msgid "Deducted when ordered"
 msgstr ""
 
-#: admin/views/order-detail.php:29
+#: admin/views/order-detail.php:30
 msgid "Unchanged until fulfilled"
 msgstr ""
 
-#: admin/views/order-detail.php:36
+#: admin/views/order-detail.php:31
+msgid "Area does not track quantities (special orders marked per item)"
+msgstr ""
+
+#. translators: %s: order number.
+#: admin/views/order-detail.php:38
 #, php-format
 msgid "Order %s"
 msgstr ""
 
-#: admin/views/order-detail.php:39
+#: admin/views/order-detail.php:41
 msgid "← All orders"
 msgstr ""
 
-#: admin/views/order-detail.php:40 public/class-front.php:592
+#: admin/views/order-detail.php:42
+#: public/class-front.php:778
 msgid "Print Order"
 msgstr ""
 
-#: admin/views/order-detail.php:45 public/class-front.php:571 public/views/confirmation.php:33 public/views/order-form.php:233 public/views/print-order.php:56 includes/class-email.php:122
+#: admin/views/order-detail.php:47
+#: includes/class-email.php:132
+#: includes/class-email.php:175
+#: public/class-front.php:757
+#: public/views/confirmation.php:34
+#: public/views/order-form.php:222
+#: public/views/print-order.php:57
+#: public/views/review.php:53
 msgid "THIS ORDER CONTAINS SPECIAL ORDER ITEMS"
 msgstr ""
 
-#: admin/views/order-detail.php:50
+#. translators: %s: turnaround.
+#: admin/views/order-detail.php:52
 #, php-format
 msgid "Highlighted items are not in stock for this Area and may require %s to obtain and stock."
 msgstr ""
 
-#: admin/views/order-detail.php:62 public/views/print-order.php:68
+#: admin/views/order-detail.php:64
+#: public/views/print-order.php:69
 msgid "Order date"
 msgstr ""
 
-#: admin/views/order-detail.php:63 admin/views/order-detail.php:64 admin/views/settings.php:185
+#. translators: %d: ID.
+#: admin/views/order-detail.php:65
+#: admin/views/order-detail.php:66
+#: admin/views/settings.php:186
 #, php-format
 msgid "BMLT ID %d"
 msgstr ""
 
-#: admin/views/order-detail.php:65 admin/views/settings.php:162
+#. translators: %d: ID.
+#: admin/views/order-detail.php:67
+#: admin/views/settings.php:163
 msgid "Contact name"
 msgstr ""
 
-#: admin/views/order-detail.php:69
+#: admin/views/order-detail.php:71
 msgid "Inventory handling"
 msgstr ""
 
-#: admin/views/order-detail.php:71 public/class-front.php:638 includes/class-helpers.php:207
+#: admin/views/order-detail.php:73
+#: includes/class-helpers.php:221
+#: public/class-front.php:825
 msgid "Fulfilled"
 msgstr ""
 
-#: admin/views/order-detail.php:80 public/class-front.php:602 public/views/confirmation.php:65 public/views/confirmation.php:78 public/views/print-order.php:84 includes/class-email.php:202
+#: admin/views/order-detail.php:82
+#: includes/class-email.php:212
+#: includes/class-email.php:248
+#: public/class-front.php:788
+#: public/views/confirmation.php:66
+#: public/views/confirmation.php:79
+#: public/views/print-order.php:85
+#: public/views/review.php:81
+#: public/views/review.php:93
 msgid "Qty"
 msgstr ""
 
-#: admin/views/order-detail.php:82 public/views/confirmation.php:68 public/views/confirmation.php:81 public/views/order-form.php:219 public/views/print-order.php:87
+#: admin/views/order-detail.php:84
+#: public/views/confirmation.php:69
+#: public/views/confirmation.php:82
+#: public/views/print-order.php:88
+#: public/views/review.php:84
+#: public/views/review.php:99
 msgid "Line total"
 msgstr ""
 
-#: admin/views/order-detail.php:83 public/views/print-order.php:85
+#: admin/views/order-detail.php:85
+#: public/views/print-order.php:86
 msgid "Stock / special order"
 msgstr ""
 
-#: admin/views/order-detail.php:96 public/views/confirmation.php:86
+#. translators: 1: stock qty, 2: special qty.
+#. translators: 1: in stock qty, 2: special qty.
+#: admin/views/order-detail.php:98
+#: public/views/confirmation.php:87
 #, php-format
 msgid "%1$d from stock, %2$d special order"
 msgstr ""
 
-#: admin/views/order-detail.php:98 includes/class-email.php:134
+#. translators: %d: qty.
+#. translators: %d: quantity.
+#: admin/views/order-detail.php:100
+#: includes/class-email.php:144
 #, php-format
 msgid "%d special order"
 msgstr ""
 
-#: admin/views/order-detail.php:109 public/class-front.php:606 public/views/confirmation.php:103 public/views/order-form.php:239 public/views/print-order.php:113 includes/class-email.php:218
+#: admin/views/order-detail.php:111
+#: includes/class-email.php:228
+#: includes/class-email.php:258
+#: public/class-front.php:792
+#: public/views/confirmation.php:104
+#: public/views/print-order.php:114
 msgid "Subtotal"
 msgstr ""
 
-#: admin/views/order-detail.php:117 public/class-front.php:598
+#: admin/views/order-detail.php:119
+#: public/class-front.php:784
 msgid "History"
 msgstr ""
 
-#: admin/views/order-detail.php:131
+#: admin/views/order-detail.php:133
 msgid "Update status"
 msgstr ""
 
-#: admin/views/order-detail.php:134 public/class-front.php:639
+#: admin/views/order-detail.php:136
+#: public/class-front.php:826
 msgid "This order is final and can no longer change status."
 msgstr ""
 
-#: admin/views/order-detail.php:141 public/class-front.php:597
+#: admin/views/order-detail.php:143
+#: public/class-front.php:783
 msgid "Optional note"
 msgstr ""
 
-#: admin/views/order-detail.php:146
+#: admin/views/order-detail.php:148
 msgid "Email the requester when marking Ready or Waiting for Special Order"
 msgstr ""
 
-#: admin/views/order-detail.php:151 public/class-front.php:585
+#: admin/views/order-detail.php:153
+#: public/class-front.php:771
 msgid "Mark Reviewed"
 msgstr ""
 
-#: admin/views/order-detail.php:152 public/class-front.php:586 includes/class-helpers.php:204
+#: admin/views/order-detail.php:154
+#: includes/class-helpers.php:218
+#: public/class-front.php:772
 msgid "Waiting for Special Order"
 msgstr ""
 
-#: admin/views/order-detail.php:153 public/class-front.php:587
+#: admin/views/order-detail.php:155
+#: public/class-front.php:773
 msgid "Mark Ready"
 msgstr ""
 
-#: admin/views/order-detail.php:154 public/class-front.php:588 includes/class-helpers.php:206
+#: admin/views/order-detail.php:156
+#: includes/class-helpers.php:220
+#: public/class-front.php:774
 msgid "Partially Fulfilled"
 msgstr ""
 
-#: admin/views/order-detail.php:155 public/class-front.php:589
+#: admin/views/order-detail.php:157
+#: public/class-front.php:775
 msgid "Mark Fulfilled"
 msgstr ""
 
-#: admin/views/order-detail.php:155 public/class-front.php:584
+#: admin/views/order-detail.php:157
+#: public/class-front.php:770
 msgid "Mark this order fulfilled? In-stock quantities will be permanently deducted from inventory."
 msgstr ""
 
-#: admin/views/order-detail.php:156 public/class-front.php:590
+#: admin/views/order-detail.php:158
+#: public/class-front.php:776
 msgid "Cancel Order"
 msgstr ""
 
-#: admin/views/order-detail.php:156 public/class-front.php:583
+#: admin/views/order-detail.php:158
+#: public/class-front.php:769
 msgid "Cancel this order? Reserved inventory will be released. This cannot be undone."
 msgstr ""
 
-#: admin/views/order-detail.php:172
+#: admin/views/order-detail.php:174
 msgid "Notifications"
 msgstr ""
 
-#: admin/views/order-detail.php:178 public/class-front.php:591
+#: admin/views/order-detail.php:180
+#: public/class-front.php:777
 msgid "Resend Notification"
 msgstr ""
 
-#: admin/views/order-detail.php:179
+#: admin/views/order-detail.php:181
 msgid "Sends the order again to this Area’s literature workers."
 msgstr ""
 
-#: admin/views/order-detail.php:187 public/class-front.php:593
+#: admin/views/order-detail.php:189
+#: public/class-front.php:779
 msgid "Email Requester"
 msgstr ""
 
-#: admin/views/order-detail.php:190
+#: admin/views/order-detail.php:192
 msgid "Send email"
 msgstr ""
 
-#: admin/views/order-detail.php:196 admin/views/order-detail.php:206
+#: admin/views/order-detail.php:198
+#: admin/views/order-detail.php:208
 msgid "Add note"
 msgstr ""
 
-#: admin/views/order-detail.php:203
+#: admin/views/order-detail.php:205
 msgid "Note"
 msgstr ""
 
-#: admin/views/orders.php:18
+#: admin/views/orders.php:19
 msgid "Search orders"
 msgstr ""
 
-#: admin/views/partial-audit.php:29
+#: admin/views/partial-audit.php:30
 msgid "Change"
 msgstr ""
 
-#: admin/views/partial-audit.php:30 public/class-front.php:622
+#: admin/views/partial-audit.php:31
+#: public/class-front.php:809
 msgid "Reason"
 msgstr ""
 
-#: admin/views/partial-audit.php:34
+#: admin/views/partial-audit.php:35
 msgid "No history yet."
 msgstr ""
 
-#: admin/views/settings.php:23
+#: admin/views/settings.php:24
 msgid "Settings sections"
 msgstr ""
 
-#: admin/views/settings.php:38
+#: admin/views/settings.php:39
 msgid "Users listed here hold at least one literature capability. Administrators always have every capability. You can also give users the “Literature Worker” or “Literature Chair” role under Users."
 msgstr ""
 
-#: admin/views/settings.php:39
+#: admin/views/settings.php:40
 msgid "Area restriction: leave all Areas unchecked to allow every Area. Checking one or more Areas limits that user to those Areas’ orders, inventory and catalogs (and hides the shared catalog from editing)."
 msgstr ""
 
-#: admin/views/settings.php:46
+#: admin/views/settings.php:47
 msgid "User"
 msgstr ""
 
-#: admin/views/settings.php:50
+#: admin/views/settings.php:51
 msgid "Restrict to Areas"
 msgstr ""
 
-#: admin/views/settings.php:54
+#: admin/views/settings.php:55
 msgid "No users have literature capabilities yet."
 msgstr ""
 
-#: admin/views/settings.php:67
+#: admin/views/settings.php:68
 msgid "Yes (administrator)"
 msgstr ""
 
-#: admin/views/settings.php:71
+#: admin/views/settings.php:72
 msgid "(via role)"
 msgstr ""
 
-#: admin/views/settings.php:92
+#: admin/views/settings.php:93
 msgid "Add a literature worker (username or email)"
 msgstr ""
 
-#: admin/views/settings.php:94
+#: admin/views/settings.php:95
 msgid "Grants view orders, manage orders and manage inventory. Adjust checkboxes afterwards."
 msgstr ""
 
-#: admin/views/settings.php:96
+#: admin/views/settings.php:97
 msgid "Capabilities granted by a role can only be removed by changing the user’s role. Permissions set here are stored in the literature data directory, so database pushes do not change them."
 msgstr ""
 
-#: admin/views/settings.php:97
+#: admin/views/settings.php:98
 msgid "Save permissions"
 msgstr ""
 
-#: admin/views/settings.php:99
+#: admin/views/settings.php:100
 msgid "Only site administrators can change permissions."
 msgstr ""
 
-#: admin/views/settings.php:111 includes/class-settings.php:545
+#: admin/views/settings.php:112
+#: includes/class-settings.php:559
 msgid "Organization name"
 msgstr ""
 
-#: admin/views/settings.php:113
+#: admin/views/settings.php:114
 msgid "Currency"
 msgstr ""
 
-#: admin/views/settings.php:116
+#: admin/views/settings.php:117
 msgid "Symbol position"
 msgstr ""
 
-#: admin/views/settings.php:118
+#: admin/views/settings.php:119
 msgid "Before amount ($1.00)"
 msgstr ""
 
-#: admin/views/settings.php:119
+#: admin/views/settings.php:120
 msgid "After amount (1.00€)"
 msgstr ""
 
-#: admin/views/settings.php:122
+#: admin/views/settings.php:123
 msgid "Number format"
 msgstr ""
 
-#: admin/views/settings.php:124
+#: admin/views/settings.php:125
 msgid "Decimals"
 msgstr ""
 
-#: admin/views/settings.php:125
+#: admin/views/settings.php:126
 msgid "Decimal separator"
 msgstr ""
 
-#: admin/views/settings.php:127
+#: admin/views/settings.php:128
 msgid "Thousands separator"
 msgstr ""
 
-#: admin/views/settings.php:131
+#: admin/views/settings.php:132
 msgid "space"
 msgstr ""
 
-#: admin/views/settings.php:135
+#: admin/views/settings.php:136
 msgid "Area Service delivery message (public)"
 msgstr ""
 
-#: admin/views/settings.php:137
+#: admin/views/settings.php:138
 msgid "Shown to requesters for in-stock literature. Do not promise a specific date unless you also set one per Area."
 msgstr ""
 
-#: admin/views/settings.php:138
+#: admin/views/settings.php:139
 msgid "Delivery message (literature-worker emails)"
 msgstr ""
 
-#: admin/views/settings.php:140
+#: admin/views/settings.php:141
 msgid "Special-order message"
 msgstr ""
 
-#: admin/views/settings.php:142
+#: admin/views/settings.php:143
 msgid "Approximate special-order turnaround"
 msgstr ""
 
-#: admin/views/settings.php:143
+#: admin/views/settings.php:144
 msgid "e.g. “approximately one month”"
 msgstr ""
 
-#: admin/views/settings.php:144
+#: admin/views/settings.php:145
 msgid "Inventory when an order is placed"
 msgstr ""
 
-#: admin/views/settings.php:146
+#: admin/views/settings.php:147
 msgid "Inventory reservation behavior"
 msgstr ""
 
-#: admin/views/settings.php:147
+#: admin/views/settings.php:148
 msgid "Reserve stock when ordered, deduct permanently when fulfilled (recommended)"
 msgstr ""
 
-#: admin/views/settings.php:148
+#: admin/views/settings.php:149
 msgid "Deduct stock immediately when ordered (restored if cancelled)"
 msgstr ""
 
-#: admin/views/settings.php:149
+#: admin/views/settings.php:150
 msgid "Leave inventory unchanged until the order is fulfilled"
 msgstr ""
 
-#: admin/views/settings.php:150
-msgid "Changing this affects new orders only. Each order remembers the method it was placed under."
+#: admin/views/settings.php:151
+msgid "Applies to Areas that track quantities. Changing this affects new orders only. Each order remembers the method it was placed under."
 msgstr ""
 
-#: admin/views/settings.php:152
+#: admin/views/settings.php:153
 msgid "When quantity exceeds stock"
 msgstr ""
 
-#: admin/views/settings.php:154
+#: admin/views/settings.php:155
 msgid "Excess quantity behavior"
 msgstr ""
 
-#: admin/views/settings.php:155
+#: admin/views/settings.php:156
 msgid "Fill what is available from stock; special order only the excess"
 msgstr ""
 
-#: admin/views/settings.php:156
+#: admin/views/settings.php:157
 msgid "Special order the entire line"
 msgstr ""
 
-#: admin/views/settings.php:158
+#: admin/views/settings.php:159
 msgid "Order-number prefix"
 msgstr ""
 
-#: admin/views/settings.php:159
+#. translators: %s: example.
+#: admin/views/settings.php:160
 #, php-format
 msgid "Example: %s"
 msgstr ""
 
-#: admin/views/settings.php:160
+#. translators: %s: example.
+#: admin/views/settings.php:161
 msgid "Required fields"
 msgstr ""
 
-#: admin/views/settings.php:163 public/views/order-form.php:129
+#: admin/views/settings.php:164
+#: public/views/order-form.php:136
 msgid "Phone number"
 msgstr ""
 
-#: admin/views/settings.php:164 public/views/order-form.php:133
+#: admin/views/settings.php:165
+#: public/views/order-form.php:140
 msgid "Email address"
 msgstr ""
 
-#: admin/views/settings.php:166
+#: admin/views/settings.php:167
 msgid "Default low-stock threshold"
 msgstr ""
 
-#: admin/views/settings.php:168
+#: admin/views/settings.php:169
 msgid "Maximum quantity per item"
 msgstr ""
 
-#: admin/views/settings.php:175
+#: admin/views/settings.php:176
 msgid "No Areas selected yet."
 msgstr ""
 
-#: admin/views/settings.php:175
+#: admin/views/settings.php:176
 msgid "Select Areas on the BMLT / Areas page."
 msgstr ""
 
-#: admin/views/settings.php:177
+#: admin/views/settings.php:178
 msgid "Orders are emailed only to the addresses configured for the order’s own Area. Separate multiple addresses with commas."
 msgstr ""
 
-#: admin/views/settings.php:188
+#: admin/views/settings.php:189
 msgid "Display name override"
 msgstr ""
 
-#: admin/views/settings.php:190
-msgid "Literature worker email(s)"
-msgstr ""
-
-#: admin/views/settings.php:192
-msgid "Literature chair email (optional)"
+#: admin/views/settings.php:193
+msgid "Track quantities on hand (items with no stock become special orders automatically)"
 msgstr ""
 
 #: admin/views/settings.php:194
-msgid "Special-order recipient(s)"
+msgid "Don’t track quantities — mark which items are special orders for this Area"
 msgstr ""
 
-#: admin/views/settings.php:196
-msgid "Also notified when an order contains special-order items."
+#: admin/views/settings.php:195
+msgid "Without tracking, mark items under Literature → Inventory, on each item’s edit page, or in the worker Inventory tab. Orders for this Area never change stock counts."
 msgstr ""
 
 #: admin/views/settings.php:197
-msgid "Area website"
+msgid "Literature worker email(s)"
 msgstr ""
 
 #: admin/views/settings.php:199
-msgid "Area phone"
+msgid "Literature chair email (optional)"
 msgstr ""
 
 #: admin/views/settings.php:201
-msgid "Delivery instructions"
+msgid "Special-order recipient(s)"
 msgstr ""
 
 #: admin/views/settings.php:203
-msgid "Area Service meeting details"
+msgid "Also notified when an order contains special-order items."
 msgstr ""
 
 #: admin/views/settings.php:204
+msgid "Area website"
+msgstr ""
+
+#: admin/views/settings.php:206
+msgid "Area phone"
+msgstr ""
+
+#: admin/views/settings.php:208
+msgid "Delivery instructions"
+msgstr ""
+
+#: admin/views/settings.php:210
+msgid "Area Service meeting details"
+msgstr ""
+
+#: admin/views/settings.php:211
 msgid "e.g. 2nd Sunday, 2 PM, Community Center"
 msgstr ""
 
-#: admin/views/settings.php:205
+#: admin/views/settings.php:212
 msgid "Next Area Service meeting date (optional)"
 msgstr ""
 
-#: admin/views/settings.php:207
+#: admin/views/settings.php:214
 msgid "Shown to requesters only while the date is in the future. Leave blank to avoid promising a date."
 msgstr ""
 
-#: admin/views/settings.php:215
+#: admin/views/settings.php:222
 msgid "Sender name"
 msgstr ""
 
-#: admin/views/settings.php:217
+#: admin/views/settings.php:224
 msgid "Sender email"
 msgstr ""
 
-#: admin/views/settings.php:219
+#: admin/views/settings.php:226
 msgid "Use an address on your own domain to avoid spam filtering."
 msgstr ""
 
-#: admin/views/settings.php:220
+#: admin/views/settings.php:227
 msgid "Global literature chair email"
 msgstr ""
 
-#: admin/views/settings.php:222
+#: admin/views/settings.php:229
 msgid "Copy every order (all Areas) to this address"
 msgstr ""
 
-#: admin/views/settings.php:223
+#: admin/views/settings.php:230
 msgid "Also used as the fallback recipient if an Area has no literature worker email."
 msgstr ""
 
-#: admin/views/settings.php:224
+#: admin/views/settings.php:231
 msgid "Administrator copy"
 msgstr ""
 
-#: admin/views/settings.php:225
+#: admin/views/settings.php:232
 msgid "Send an administrator notification for every order to:"
 msgstr ""
 
-#: admin/views/settings.php:226
+#: admin/views/settings.php:233
 msgid "Administrator email"
 msgstr ""
 
-#: admin/views/settings.php:228
+#: admin/views/settings.php:235
 msgid "Requester emails"
 msgstr ""
 
-#: admin/views/settings.php:230
+#: admin/views/settings.php:237
 msgid "Send the requester a confirmation email"
 msgstr ""
 
-#: admin/views/settings.php:231
+#: admin/views/settings.php:238
 msgid "Pre-check “email the requester” when marking orders Ready / Waiting for Special Order"
 msgstr ""
 
-#: admin/views/settings.php:234
+#: admin/views/settings.php:241
 msgid "Configure SMTP and send a test email →"
 msgstr ""
 
-#: admin/views/settings.php:237
+#: admin/views/settings.php:244
 msgid "Templates accept basic HTML. Placeholders are replaced when the email is sent; requester-supplied values are always escaped. Leave a field blank to use the default."
 msgstr ""
 
-#: admin/views/settings.php:238
+#: admin/views/settings.php:245
 msgid "Available placeholders"
 msgstr ""
 
-#: admin/views/settings.php:250
+#: admin/views/settings.php:257
 msgid "Subject"
 msgstr ""
 
-#: admin/views/settings.php:252
+#: admin/views/settings.php:259
 msgid "Body (HTML)"
 msgstr ""
 
-#: admin/views/settings.php:254
+#: admin/views/settings.php:261
 msgid "Reset this template to the default"
 msgstr ""
 
-#: admin/views/settings.php:261
+#: admin/views/settings.php:268
 msgid "Spam protection"
 msgstr ""
 
-#: admin/views/settings.php:263
+#: admin/views/settings.php:270
 msgid "Allow at most"
 msgstr ""
 
-#: admin/views/settings.php:264
+#: admin/views/settings.php:271
 msgid "orders per connection every"
 msgstr ""
 
-#: admin/views/settings.php:264
+#: admin/views/settings.php:271
 msgid "minutes"
 msgstr ""
 
-#: admin/views/settings.php:265
+#: admin/views/settings.php:272
 msgid "Reject forms submitted faster than"
 msgstr ""
 
-#: admin/views/settings.php:265
+#: admin/views/settings.php:272
 msgid "seconds"
 msgstr ""
 
-#: admin/views/settings.php:266
+#: admin/views/settings.php:273
 msgid "A hidden honeypot field is always active. Developers can add a CAPTCHA with the bmlt_lit_order_form_captcha action and bmlt_lit_validate_captcha filter."
 msgstr ""
 
-#: admin/views/settings.php:268
+#: admin/views/settings.php:275
 msgid "Uninstall"
 msgstr ""
 
-#: admin/views/settings.php:269
+#: admin/views/settings.php:276
 msgid "Delete plugin data when uninstalling"
 msgstr ""
 
-#: admin/views/settings.php:270
+#: admin/views/settings.php:277
 msgid "Off by default. When on, deleting the plugin removes the JSON data directory (all orders, catalog, inventory, audit history and settings) permanently. Deactivating never deletes data."
 msgstr ""
 
-#: admin/views/smtp.php:19
+#: admin/views/smtp.php:20
 msgid "Choose how literature emails are delivered. When custom SMTP is off, this plugin does not change how WordPress sends any email."
 msgstr ""
 
-#: admin/views/smtp.php:22
+#: admin/views/smtp.php:23
 msgid "The PHP OpenSSL extension is not available, so the SMTP password can only be obfuscated in the database. Defining BMLT_LIT_SMTP_PASSWORD in wp-config.php is strongly recommended."
 msgstr ""
 
-#: admin/views/smtp.php:25
+#: admin/views/smtp.php:26
 msgid "The saved SMTP password can no longer be decrypted (WordPress security keys were probably changed). Please enter the password again."
 msgstr ""
 
-#: admin/views/smtp.php:33 admin/views/smtp.php:36
+#: admin/views/smtp.php:34
+#: admin/views/smtp.php:37
 msgid "Delivery method"
 msgstr ""
 
-#: admin/views/smtp.php:37
+#: admin/views/smtp.php:38
 msgid "Use WordPress default mail"
 msgstr ""
 
-#: admin/views/smtp.php:38
+#: admin/views/smtp.php:39
 msgid "Use custom SMTP (applies to all WordPress email)"
 msgstr ""
 
-#: admin/views/smtp.php:43
+#: admin/views/smtp.php:44
 msgid "SMTP hostname"
 msgstr ""
 
-#: admin/views/smtp.php:47
+#: admin/views/smtp.php:48
 msgid "SMTP port"
 msgstr ""
 
-#: admin/views/smtp.php:48
+#: admin/views/smtp.php:49
 msgid "Usually 587 for STARTTLS, 465 for SSL, 25 for none."
 msgstr ""
 
-#: admin/views/smtp.php:51
+#: admin/views/smtp.php:52
 msgid "Encryption"
 msgstr ""
 
-#: admin/views/smtp.php:54
+#: admin/views/smtp.php:55
 msgid "None"
 msgstr ""
 
-#: admin/views/smtp.php:55
+#: admin/views/smtp.php:56
 msgid "STARTTLS / TLS"
 msgstr ""
 
-#: admin/views/smtp.php:56
+#: admin/views/smtp.php:57
 msgid "SSL"
 msgstr ""
 
-#: admin/views/smtp.php:61
+#: admin/views/smtp.php:62
 msgid "Authentication"
 msgstr ""
 
-#: admin/views/smtp.php:62
+#: admin/views/smtp.php:63
 msgid "Server requires a username and password"
 msgstr ""
 
-#: admin/views/smtp.php:65
+#: admin/views/smtp.php:66
 msgid "SMTP username"
 msgstr ""
 
-#: admin/views/smtp.php:69 admin/views/status.php:64
+#. translators: 1: host, 2: port, 3: encryption.
+#: admin/views/smtp.php:70
+#: admin/views/status.php:65
 msgid "SMTP password"
 msgstr ""
 
-#: admin/views/smtp.php:72
+#: admin/views/smtp.php:73
 msgid "The password is defined in wp-config.php (BMLT_LIT_SMTP_PASSWORD) and is not stored in the database."
 msgstr ""
 
-#: admin/views/smtp.php:74
+#: admin/views/smtp.php:75
 msgid "•••••••• (saved — leave blank to keep)"
 msgstr ""
 
-#: admin/views/smtp.php:76
+#: admin/views/smtp.php:77
 msgid "Remove the saved password"
 msgstr ""
 
-#: admin/views/smtp.php:78
+#: admin/views/smtp.php:79
 msgid "The saved password is encrypted and is never displayed. For best security add define( 'BMLT_LIT_SMTP_PASSWORD', '…' ); to wp-config.php instead."
 msgstr ""
 
-#: admin/views/smtp.php:83
+#: admin/views/smtp.php:84
 msgid "From email"
 msgstr ""
 
-#: admin/views/smtp.php:87
+#: admin/views/smtp.php:88
 msgid "From name"
 msgstr ""
 
-#: admin/views/smtp.php:91
+#: admin/views/smtp.php:92
 msgid "Force From address"
 msgstr ""
 
-#: admin/views/smtp.php:92
+#: admin/views/smtp.php:93
 msgid "Always send from the address above (recommended when your SMTP provider rejects other senders)"
 msgstr ""
 
-#: admin/views/smtp.php:95
+#: admin/views/smtp.php:96
 msgid "Default reply-to"
 msgstr ""
 
-#: admin/views/smtp.php:96
+#: admin/views/smtp.php:97
 msgid "Used only when a message has no reply-to of its own."
 msgstr ""
 
-#: admin/views/smtp.php:99
+#: admin/views/smtp.php:100
 msgid "Save SMTP settings"
 msgstr ""
 
-#: admin/views/smtp.php:103 admin/views/smtp.php:111
+#: admin/views/smtp.php:104
+#: admin/views/smtp.php:112
 msgid "Send Test Email"
 msgstr ""
 
-#: admin/views/smtp.php:109
+#: admin/views/smtp.php:110
 msgid "Send a test message to"
 msgstr ""
 
-#: admin/views/smtp.php:113
+#: admin/views/smtp.php:114
 msgid "Save your settings first. Errors are shown without revealing credentials."
 msgstr ""
 
-#: admin/views/status.php:42
+#: admin/views/status.php:43
 msgid "Plugin version"
 msgstr ""
 
-#: admin/views/status.php:43
+#: admin/views/status.php:44
 msgid "Storage"
 msgstr ""
 
-#: admin/views/status.php:43
+#: admin/views/status.php:44
 msgid "JSON files (not the WordPress database)"
 msgstr ""
 
-#: admin/views/status.php:44
+#: admin/views/status.php:45
 msgid "Data directory"
 msgstr ""
 
-#: admin/views/status.php:44
+#: admin/views/status.php:45
 msgid "(set by BMLT_LIT_DATA_DIR)"
 msgstr ""
 
-#: admin/views/status.php:44
+#: admin/views/status.php:45
 msgid "(default location)"
 msgstr ""
 
-#: admin/views/status.php:45
+#: admin/views/status.php:46
 msgid "Directory writable"
 msgstr ""
 
-#: admin/views/status.php:45
+#: admin/views/status.php:46
 msgid "NO — data cannot be saved"
 msgstr ""
 
-#: admin/views/status.php:46
+#: admin/views/status.php:47
 msgid "Data files"
 msgstr ""
 
-#: admin/views/status.php:46
+#. translators: 1: count, 2: size.
+#: admin/views/status.php:47
 #, php-format
 msgid "%1$d files, %2$s"
 msgstr ""
 
-#: admin/views/status.php:47
+#. translators: 1: count, 2: size.
+#: admin/views/status.php:48
 msgid "Backup snapshots"
 msgstr ""
 
-#: admin/views/status.php:48
+#: admin/views/status.php:49
 msgid "Lock method"
 msgstr ""
 
-#: admin/views/status.php:49
+#: admin/views/status.php:50
 msgid "Data created by site"
 msgstr ""
 
-#: admin/views/status.php:50
+#: admin/views/status.php:51
 msgid "Storage schema"
 msgstr ""
 
-#: admin/views/status.php:51
+#: admin/views/status.php:52
 msgid "WordPress version"
 msgstr ""
 
-#: admin/views/status.php:52
+#: admin/views/status.php:53
 msgid "PHP version"
 msgstr ""
 
-#: admin/views/status.php:53
+#: admin/views/status.php:54
 msgid "BMLT server"
 msgstr ""
 
-#: admin/views/status.php:53
+#: admin/views/status.php:54
 msgid "not configured"
 msgstr ""
 
-#: admin/views/status.php:54
+#: admin/views/status.php:55
 msgid "BMLT last success"
 msgstr ""
 
-#: admin/views/status.php:55
+#: admin/views/status.php:56
 msgid "BMLT last error"
 msgstr ""
 
-#: admin/views/status.php:56
+#: admin/views/status.php:57
 msgid "BMLT cache"
 msgstr ""
 
-#: admin/views/status.php:56
+#. translators: 1: count, 2: date, 3: freshness.
+#: admin/views/status.php:57
 #, php-format
 msgid "%1$d service bodies (%2$s); meetings %3$s"
 msgstr ""
 
-#: admin/views/status.php:56
+#. translators: 1: count, 2: date, 3: freshness.
+#: admin/views/status.php:57
 msgid "stale — using cached data"
 msgstr ""
 
-#: admin/views/status.php:57
+#. translators: 1: count, 2: date, 3: freshness.
+#: admin/views/status.php:58
 msgid "Next automatic refresh"
 msgstr ""
 
-#: admin/views/status.php:57
+#. translators: 1: count, 2: date, 3: freshness.
+#: admin/views/status.php:58
 msgid "not scheduled"
 msgstr ""
 
-#: admin/views/status.php:58
+#: admin/views/status.php:59
 msgid "Configured Areas"
 msgstr ""
 
-#: admin/views/status.php:60
+#: admin/views/status.php:61
 msgid "Literature items"
 msgstr ""
 
-#: admin/views/status.php:61
+#: admin/views/status.php:62
 msgid "Inventory records"
 msgstr ""
 
-#: admin/views/status.php:63
+#: admin/views/status.php:64
 msgid "Email delivery"
 msgstr ""
 
-#: admin/views/status.php:63
+#. translators: 1: host, 2: port, 3: encryption.
+#: admin/views/status.php:64
 #, php-format
 msgid "Custom SMTP: %1$s:%2$d (%3$s)"
 msgstr ""
 
-#: admin/views/status.php:63 includes/class-smtp.php:276
+#. translators: 1: host, 2: port, 3: encryption.
+#: admin/views/status.php:64
+#: includes/class-smtp.php:277
 msgid "WordPress default mail"
 msgstr ""
 
-#: admin/views/status.php:64
+#. translators: 1: host, 2: port, 3: encryption.
+#: admin/views/status.php:65
 msgid "defined in wp-config.php"
 msgstr ""
 
-#: admin/views/status.php:64
+#. translators: 1: host, 2: port, 3: encryption.
+#: admin/views/status.php:65
 msgid "saved (encrypted, in the data directory)"
 msgstr ""
 
-#: admin/views/status.php:64
+#. translators: 1: host, 2: port, 3: encryption.
+#: admin/views/status.php:65
 msgid "not set"
 msgstr ""
 
-#: admin/views/status.php:65
+#: admin/views/status.php:66
 msgid "Areas without worker email"
 msgstr ""
 
-#: admin/views/status.php:65
+#: admin/views/status.php:66
 msgid "orders fall back to the global chair / site admin"
 msgstr ""
 
-#: admin/views/status.php:66
+#: admin/views/status.php:67
 msgid "Delete data on uninstall"
 msgstr ""
 
-#: admin/views/status.php:66
+#: admin/views/status.php:67
 msgid "YES"
 msgstr ""
 
-#: admin/views/status.php:74
+#: admin/views/status.php:75
 msgid "Confirm restore — nothing has changed yet"
 msgstr ""
 
-#: admin/views/status.php:81
+#. translators: 1: site, 2: items, 3: inventory, 4: orders, 5: audit, 6: users.
+#: admin/views/status.php:82
 #, php-format
 msgid "Backup from %1$s contains %2$d items, %3$d inventory records, %4$d orders, %5$d audit entries and %6$d user permission sets."
 msgstr ""
 
-#: admin/views/status.php:92
+#: admin/views/status.php:93
 msgid "Restoring REPLACES all current literature data on this site (catalog, inventory, orders, history, settings and permissions). A snapshot of the current data is saved first. This site’s SMTP password is kept."
 msgstr ""
 
-#: admin/views/status.php:96
+#: admin/views/status.php:97
 msgid "Type RESTORE to confirm"
 msgstr ""
 
-#: admin/views/status.php:99
+#: admin/views/status.php:100
 msgid "Replace all data with this backup"
 msgstr ""
 
-#: admin/views/status.php:100 public/views/manager.php:173
+#: admin/views/status.php:101
+#: public/views/manager.php:160
 msgid "Cancel"
 msgstr ""
 
-#: admin/views/status.php:109
+#: admin/views/status.php:110
 msgid "This data directory was created by a different site."
 msgstr ""
 
-#: admin/views/status.php:113
+#. translators: 1: other site, 2: this site.
+#: admin/views/status.php:114
 #, php-format
 msgid "Created by: %1$s. This site: %2$s."
 msgstr ""
 
-#: admin/views/status.php:116
+#: admin/views/status.php:117
 msgid "If this is production and the directory was copied from staging (or both sites point at the same directory), give each environment its own directory with BMLT_LIT_DATA_DIR before taking real orders. If you intentionally moved the data here (for example, a domain change), mark it as belonging to this site."
 msgstr ""
 
-#: admin/views/status.php:121
+#: admin/views/status.php:122
 msgid "Mark this literature data as belonging to this site?"
 msgstr ""
 
-#: admin/views/status.php:121
+#: admin/views/status.php:122
 msgid "This is correct — use this data for this site"
 msgstr ""
 
-#: admin/views/status.php:129
+#: admin/views/status.php:130
 msgid "Staging / production safety"
 msgstr ""
 
-#: admin/views/status.php:130
+#: admin/views/status.php:131
 msgid "Literature data is stored in JSON files, so pushing a staging DATABASE to production no longer touches orders, inventory, catalog or settings."
 msgstr ""
 
-#: admin/views/status.php:132
+#: admin/views/status.php:133
 msgid "However, the data directory is inside your WordPress installation. If your host’s “push to production” also copies FILES (many do, including wp-content), it would overwrite production’s data with staging’s. To prevent this, either exclude this folder from file pushes, or move it outside the WordPress directory on each server by adding a line like this to wp-config.php (above “That’s all, stop editing”):"
 msgstr ""
 
-#: admin/views/status.php:134
+#: admin/views/status.php:135
 msgid "For clarity, you can set the location explicitly in wp-config.php on each server:"
 msgstr ""
 
-#: admin/views/status.php:137
+#: admin/views/status.php:138
 msgid "Move the existing folder to the new location before adding the line, so current data is kept. Never point staging and production at the same directory."
 msgstr ""
 
-#: admin/views/status.php:147
+#: admin/views/status.php:148
 msgid "Unreadable files"
 msgstr ""
 
-#: admin/views/status.php:152
+#: admin/views/status.php:153
 msgid "Backup and restore"
 msgstr ""
 
-#: admin/views/status.php:157
+#: admin/views/status.php:158
 msgid "Download full backup (JSON)"
 msgstr ""
 
-#: admin/views/status.php:158
+#: admin/views/status.php:159
 msgid "Catalog, inventory, orders, history, settings and permissions. The SMTP password is never included."
 msgstr ""
 
-#: admin/views/status.php:165
+#: admin/views/status.php:166
 msgid "Restore from a full backup"
 msgstr ""
 
-#: admin/views/status.php:167
+#: admin/views/status.php:168
 msgid "Check backup"
 msgstr ""
 
-#: admin/views/status.php:169
+#: admin/views/status.php:170
 msgid "The file is validated and summarized first; nothing changes until you confirm. Use this to copy a catalog/configuration from staging to production deliberately."
 msgstr ""
 
-#: admin/views/status.php:175
+#. translators: %s: directory.
+#: admin/views/status.php:176
 #, php-format
 msgid "Automatic snapshots (before restores, migrations and repairs) are kept in %s. Each data file also keeps its previous version as .bak."
 msgstr ""
 
-#: admin/views/status.php:180
+#: admin/views/status.php:181
 msgid "Tools"
 msgstr ""
 
-#: admin/views/status.php:186
+#: admin/views/status.php:187
 msgid "Fetch fresh Areas and meetings now (keeps the cache if BMLT is down)."
 msgstr ""
 
-#: admin/views/status.php:191
+#: admin/views/status.php:192
 msgid "Clear the BMLT cache? If BMLT cannot be reached, the order form will be unavailable until it can."
 msgstr ""
 
-#: admin/views/status.php:191
+#: admin/views/status.php:192
 msgid "Clear and rebuild BMLT cache"
 msgstr ""
 
-#: admin/views/status.php:196
+#: admin/views/status.php:197
 msgid "Verify storage and rebuild order index"
 msgstr ""
 
-#: admin/views/status.php:196
+#: admin/views/status.php:197
 msgid "Safe: recreates folders and protection files and rebuilds the order index from the monthly order files. Never removes data."
 msgstr ""
 
-#: admin/views/status.php:202
+#: admin/views/status.php:203
 msgid "Re-import all version 1.0 database data into JSON storage? Current JSON data will be replaced (a snapshot is saved first)."
 msgstr ""
 
-#: admin/views/status.php:202
+#: admin/views/status.php:203
 msgid "Re-run migration from version 1.0 database"
 msgstr ""
 
-#: admin/views/status.php:203
+#. translators: %s: date.
+#: admin/views/status.php:204
 #, php-format
 msgid "Last migrated %s."
 msgstr ""
 
-#: admin/views/status.php:203
+#. translators: %s: date.
+#: admin/views/status.php:204
 msgid "Version 1.0 database data was found."
 msgstr ""
 
-#: admin/views/status.php:209
+#: admin/views/status.php:210
 msgid "Permanently delete the old version 1.0 database tables and options? Download a full backup first."
 msgstr ""
 
-#: admin/views/status.php:209
+#: admin/views/status.php:210
 msgid "Delete old version 1.0 database tables"
 msgstr ""
 
-#: admin/views/status.php:210
+#: admin/views/status.php:211
 msgid "Optional cleanup after you have confirmed the migrated data is correct."
 msgstr ""
 
-#: public/class-front.php:164
-msgid "That order confirmation link is invalid or has expired."
-msgstr ""
-
-#: public/class-front.php:169
-msgid "Literature ordering is not available yet. An administrator needs to select the Areas served by this site."
-msgstr ""
-
-#: public/class-front.php:180
-msgid "The meeting list is temporarily unavailable, so literature orders cannot be placed right now. Please try again later."
-msgstr ""
-
-#: public/class-front.php:197 includes/class-email.php:278
-msgid "Area Service meeting:"
-msgstr ""
-
-#: public/class-front.php:202 includes/class-email.php:283
-#, php-format
-msgid "Next Area Service meeting: %s."
-msgstr ""
-
-#: public/class-front.php:256 includes/class-email.php:188 includes/class-helpers.php:152
-msgid "In Stock"
-msgstr ""
-
-#: public/class-front.php:257 includes/class-helpers.php:156
-msgid "Low Stock"
-msgstr ""
-
-#: public/class-front.php:262
-#, php-format
-msgid "%1$s from stock, %2$s special order"
-msgstr ""
-
-#: public/class-front.php:263
-msgid "This line will be special ordered."
-msgstr ""
-
-#: public/class-front.php:265
-#, php-format
-msgid "%s available"
-msgstr ""
-
-#: public/class-front.php:266 public/views/order-form.php:101
-msgid "— Select your meeting —"
-msgstr ""
-
-#: public/class-front.php:267
-msgid "No meetings match your search."
-msgstr ""
-
-#: public/class-front.php:268
-msgid "Submitting…"
-msgstr ""
-
-#: public/class-front.php:270 public/views/order-form.php:115
-#, php-format
-msgid "Your Area: %s"
-msgstr ""
-
-#: public/class-front.php:326
-msgid "Your order could not be saved. Please try again."
-msgstr ""
-
-#: public/class-front.php:376
-msgid "Your session expired before the order was sent. Please review the form and submit again."
-msgstr ""
-
-#: public/class-front.php:381
-msgid "Your order could not be accepted. Please try again."
-msgstr ""
-
-#: public/class-front.php:387
-msgid "This form has expired. Please reload the page and try again."
-msgstr ""
-
-#: public/class-front.php:390
-msgid "The form was submitted too quickly. Please wait a moment and submit again."
-msgstr ""
-
-#: public/class-front.php:403
-msgid "Too many orders have been submitted from your connection recently. Please wait a few minutes and try again."
-msgstr ""
-
-#: public/class-front.php:418
-msgid "Please complete the verification challenge."
-msgstr ""
-
-#: public/class-front.php:425 public/class-front.php:485
-msgid "The order form is invalid. Please reload the page."
-msgstr ""
-
-#: public/class-front.php:432
-msgid "Please select your meeting from the list."
-msgstr ""
-
-#: public/class-front.php:434
-msgid "The selected meeting is not served by this order form."
-msgstr ""
-
-#: public/class-front.php:440
-msgid "Please enter your name."
-msgstr ""
-
-#: public/class-front.php:444
-msgid "Please enter a phone number."
-msgstr ""
-
-#: public/class-front.php:446
-msgid "Please enter a valid phone number."
-msgstr ""
-
-#: public/class-front.php:450
-msgid "Please enter your email address."
-msgstr ""
-
-#: public/class-front.php:452
-msgid "Please enter a valid email address."
-msgstr ""
-
-#: public/class-front.php:460
-msgid "Quantities cannot be negative."
-msgstr ""
-
-#: public/class-front.php:465
-#, php-format
-msgid "The maximum quantity per item is %d."
-msgstr ""
-
-#: public/class-front.php:473
-msgid "Too many different items in one order."
-msgstr ""
-
-#: public/class-front.php:476
-msgid "Please enter a quantity for at least one literature item."
-msgstr ""
-
-#: public/class-front.php:526
-msgid "Please log in to access the literature tools."
-msgstr ""
-
-#: public/class-front.php:526
-msgid "Log in"
-msgstr ""
-
-#: public/class-front.php:531
-msgid "No Areas are assigned to your account yet. Please contact the site administrator."
-msgstr ""
-
-#: public/class-front.php:536
-msgid "You do not have permission to access the literature tools."
-msgstr ""
-
-#: public/class-front.php:564
-msgid "Loading…"
-msgstr ""
-
-#: public/class-front.php:565
-msgid "Something went wrong. Please try again."
-msgstr ""
-
-#: public/class-front.php:566
-msgid "No orders found for this period."
-msgstr ""
-
-#: public/class-front.php:567 public/views/orders-app.php:103
-msgid "Load Previous 45 Days"
-msgstr ""
-
-#: public/class-front.php:568 public/views/orders-app.php:102
-msgid "Load more"
-msgstr ""
-
-#: public/class-front.php:569
-msgid "There are no older orders."
-msgstr ""
-
-#: public/class-front.php:570 public/views/orders-app.php:93
-msgid "Special order"
-msgstr ""
-
-#: public/class-front.php:575
-msgid "Close"
-msgstr ""
-
-#: public/class-front.php:576 public/views/manager.php:76
-msgid "Save"
-msgstr ""
-
-#: public/class-front.php:577
-msgid "Saved."
-msgstr ""
-
-#: public/class-front.php:582
-msgid "Permanently delete this item? This cannot be undone."
-msgstr ""
-
-#: public/class-front.php:594
-msgid "Send"
-msgstr ""
-
-#: public/class-front.php:595
-msgid "Add Note"
-msgstr ""
-
-#: public/class-front.php:596
-msgid "Email the requester about this status"
-msgstr ""
-
-#: public/class-front.php:603 includes/class-email.php:202
-msgid "Unit Price"
-msgstr ""
-
-#: public/class-front.php:604 includes/class-email.php:202
-msgid "Line Total"
-msgstr ""
-
-#: public/class-front.php:605 includes/class-email.php:242
-msgid "Stock"
-msgstr ""
-
-#: public/class-front.php:617
-msgid "from stock"
-msgstr ""
-
-#: public/class-front.php:629 public/views/manager.php:190
-msgid "Actions"
-msgstr ""
-
-#: public/class-front.php:630
-msgid "Increase"
-msgstr ""
-
-#: public/class-front.php:631
-msgid "Decrease"
-msgstr ""
-
-#: public/class-front.php:633
-msgid "Choose an Area to see its inventory."
-msgstr ""
-
-#: public/class-front.php:635 public/views/manager.php:105 public/views/manager.php:110
-msgid "Add Item"
-msgstr ""
-
-#: public/class-front.php:636
-msgid "Edit Item"
-msgstr ""
-
-#: public/class-front.php:637
-msgid "Open in admin"
-msgstr ""
-
-#: public/class-front.php:640
-msgid "Showing orders from"
-msgstr ""
-
-#: public/class-front.php:641
-msgid "orders"
-msgstr ""
-
-#: public/class-front.php:731
-msgid "This print link has expired. Please reopen the order and try again."
-msgstr ""
-
-#: public/class-front.php:734
-msgid "You do not have permission to view this order."
-msgstr ""
-
-#: public/views/confirmation.php:24
-msgid "Thank you — your order has been received"
-msgstr ""
-
-#: public/views/confirmation.php:26
-msgid "Order number:"
-msgstr ""
-
-#: public/views/confirmation.php:28
-msgid "Please keep this order number for your records."
-msgstr ""
-
-#: public/views/confirmation.php:38
-#, php-format
-msgid "Some literature is not currently in stock for your Area and must be ordered. Special-order items may require %s to obtain and stock before delivery."
-msgstr ""
-
-#: public/views/confirmation.php:52
-msgid "Submitted"
-msgstr ""
-
-#: public/views/confirmation.php:60
-msgid "Literature ordered"
-msgstr ""
-
-#: public/views/confirmation.php:70 public/views/confirmation.php:83
-msgid "Availability"
-msgstr ""
-
-#: public/views/confirmation.php:113
-msgid "Place another order"
-msgstr ""
-
-#: public/views/manager.php:21
-msgid "Literature Catalog"
-msgstr ""
-
-#: public/views/manager.php:27
-msgid "The literature workspace requires JavaScript. You can also use the Literature menu in the WordPress dashboard."
-msgstr ""
-
-#: public/views/manager.php:29
-msgid "Literature tools"
-msgstr ""
-
-#: public/views/manager.php:55 public/views/order-form.php:150
-msgid "Title or SKU"
-msgstr ""
-
-#: public/views/manager.php:59
-msgid "Show only low / out of stock"
-msgstr ""
-
-#: public/views/manager.php:65
-msgid "Inventory for the selected Area"
-msgstr ""
-
-#: public/views/manager.php:75
-msgid "Reason / note"
-msgstr ""
-
-#: public/views/manager.php:93
-msgid "All catalogs I can see"
-msgstr ""
-
-#: public/views/manager.php:102
-msgid "Title, SKU or category"
-msgstr ""
-
-#: public/views/manager.php:150
-msgid "NAWS product ID"
-msgstr ""
-
-#: public/views/manager.php:154
-msgid "Image URL"
-msgstr ""
-
-#: public/views/order-form.php:64
-#, php-format
-msgid "Administrator notice: the BMLT server could not be reached, so meeting information cached on %s is being used."
-msgstr ""
-
-#: public/views/order-form.php:74
-msgid "Your order has not been sent yet. Please correct the following:"
-msgstr ""
-
-#: public/views/order-form.php:84
-msgid "Live totals and stock indicators need JavaScript. You can still submit your order; totals and stock are always calculated when the order is received."
-msgstr ""
-
-#: public/views/order-form.php:91
-msgid "Your meeting"
-msgstr ""
-
-#: public/views/order-form.php:94
-msgid "Find your meeting"
-msgstr ""
-
-#: public/views/order-form.php:95
-msgid "Type a meeting name, city or day"
-msgstr ""
-
-#: public/views/order-form.php:122
-msgid "Your contact details"
-msgstr ""
-
-#: public/views/order-form.php:138
-msgid "Notes or comments (optional)"
-msgstr ""
-
-#: public/views/order-form.php:141
-msgid "Required"
-msgstr ""
-
-#: public/views/order-form.php:149
-msgid "Search literature"
-msgstr ""
-
-#: public/views/order-form.php:166
-msgid "Select your meeting above to see stock availability for your Area."
-msgstr ""
-
-#: public/views/order-form.php:170
-msgid "No literature is available to order right now."
-msgstr ""
-
-#: public/views/order-form.php:197
-msgid "More details"
-msgstr ""
-
-#: public/views/order-form.php:212
-msgid "Quantity"
-msgstr ""
-
-#: public/views/order-form.php:214
-#, php-format
-msgid "Decrease quantity of %s"
-msgstr ""
-
-#: public/views/order-form.php:216
-#, php-format
-msgid "Increase quantity of %s"
-msgstr ""
-
-#: public/views/order-form.php:226
-msgid "No literature matches your search."
-msgstr ""
-
-#: public/views/order-form.php:231
-msgid "Order summary"
-msgstr ""
-
-#: public/views/order-form.php:245
-msgid "Totals shown here are estimates; final prices and stock are confirmed when your order is received."
-msgstr ""
-
-#: public/views/order-form.php:250
-msgid "Leave this field empty"
-msgstr ""
-
-#: public/views/order-form.php:269
-msgid "Submit order"
-msgstr ""
-
-#: public/views/orders-app.php:17
-msgid "Filter orders"
-msgstr ""
-
-#: public/views/orders-app.php:33
-msgid "Open (not fulfilled/cancelled)"
-msgstr ""
-
-#: public/views/orders-app.php:43
-msgid "With special-order items"
-msgstr ""
-
-#: public/views/orders-app.php:44
-msgid "Without special-order items"
-msgstr ""
-
-#: public/views/orders-app.php:48
-msgid "Order #, name, email or phone"
-msgstr ""
-
-#: public/views/orders-app.php:56
-msgid "From date"
-msgstr ""
-
-#: public/views/orders-app.php:60
-msgid "To date"
-msgstr ""
-
-#: public/views/orders-app.php:64
-msgid "Sort by"
-msgstr ""
-
-#: public/views/orders-app.php:66
-msgid "Newest first"
-msgstr ""
-
-#: public/views/orders-app.php:67
-msgid "Oldest first"
-msgstr ""
-
-#: public/views/orders-app.php:71
-msgid "Total (highest first)"
-msgstr ""
-
-#: public/views/orders-app.php:75
-msgid "Apply filters"
-msgstr ""
-
-#: public/views/orders-app.php:76
-msgid "Reset"
-msgstr ""
-
-#: public/views/orders-app.php:84
-msgid "Literature orders"
-msgstr ""
-
-#: public/views/orders-app.php:106
-msgid "Order details"
-msgstr ""
-
-#: public/views/orders.php:13
-msgid "The order history requires JavaScript. You can also use Literature → Orders in the WordPress dashboard."
-msgstr ""
-
-#: public/views/print-order.php:28 public/views/print-order.php:51
-#, php-format
-msgid "Literature Order %s"
-msgstr ""
-
-#: public/views/print-order.php:49
-msgid "Print"
-msgstr ""
-
-#: public/views/print-order.php:60
-#, php-format
-msgid "Special-order literature may take %s to order and stock before delivery."
-msgstr ""
-
-#: public/views/print-order.php:73
-msgid "Telephone"
-msgstr ""
-
-#: public/views/print-order.php:100
-#, php-format
-msgid "SPECIAL ORDER: %2$d (from stock: %1$d)"
-msgstr ""
-
-#: public/views/print-order.php:118
-msgid "Received by:"
-msgstr ""
-
-#: public/views/print-order.php:118
-msgid "Date:"
-msgstr ""
-
-#: includes/class-audit.php:114
+#: includes/class-audit.php:115
 msgid "Inventory adjusted"
 msgstr ""
 
-#: includes/class-audit.php:115
+#: includes/class-audit.php:116
 msgid "Inventory imported"
 msgstr ""
 
-#: includes/class-audit.php:116
+#: includes/class-audit.php:117
 msgid "Item created"
 msgstr ""
 
-#: includes/class-audit.php:117
+#: includes/class-audit.php:118
 msgid "Item updated"
 msgstr ""
 
-#: includes/class-audit.php:118
+#: includes/class-audit.php:119
 msgid "Price changed"
 msgstr ""
 
-#: includes/class-audit.php:119
+#: includes/class-audit.php:120
 msgid "Item deleted"
 msgstr ""
 
-#: includes/class-audit.php:120
+#: includes/class-audit.php:121
 msgid "Item activated"
 msgstr ""
 
-#: includes/class-audit.php:121
+#: includes/class-audit.php:122
 msgid "Item deactivated"
 msgstr ""
 
-#: includes/class-audit.php:122
+#: includes/class-audit.php:123
 msgid "Order status changed"
 msgstr ""
 
-#: includes/class-audit.php:123
+#: includes/class-audit.php:124
 msgid "Catalog imported"
 msgstr ""
 
-#: includes/class-audit.php:124
+#: includes/class-audit.php:125
 msgid "Settings changed"
 msgstr ""
 
-#: includes/class-audit.php:125
+#: includes/class-audit.php:126
 msgid "Permissions changed"
 msgstr ""
 
-#: includes/class-audit.php:138
+#: includes/class-audit.php:139
 msgid "System / public"
 msgstr ""
 
-#: includes/class-audit.php:141
+#: includes/class-audit.php:142
 msgid "(deleted user)"
 msgstr ""
 
-#: includes/class-bmlt-client.php:82
+#. translators: %d: number of hours.
+#: includes/class-bmlt-client.php:83
 #, php-format
 msgid "Every %d hours (BMLT Literature Manager)"
 msgstr ""
 
-#: includes/class-bmlt-client.php:149
+#: includes/class-bmlt-client.php:150
 msgid "The BMLT Root Server URL has not been configured."
 msgstr ""
 
-#: includes/class-bmlt-client.php:194
+#. translators: %s: error message.
+#: includes/class-bmlt-client.php:195
 #, php-format
 msgid "Could not connect to the BMLT server: %s"
 msgstr ""
 
-#: includes/class-bmlt-client.php:203
+#. translators: %d: HTTP status code.
+#: includes/class-bmlt-client.php:204
 #, php-format
 msgid "The BMLT server responded with HTTP status %d. Please verify the Root Server URL."
 msgstr ""
 
-#: includes/class-bmlt-client.php:213
+#: includes/class-bmlt-client.php:214
 msgid "The BMLT server did not return valid JSON. Make sure the URL points to the Root Server (for example https://example.org/main_server)."
 msgstr ""
 
-#: includes/class-bmlt-client.php:438
+#. translators: %d: meeting ID.
+#: includes/class-bmlt-client.php:439
 #, php-format
 msgid "Meeting #%d"
 msgstr ""
 
-#: includes/class-catalog.php:250
+#: includes/class-catalog.php:251
 msgid "The selected Area is not managed by this site."
 msgstr ""
 
-#: includes/class-catalog.php:255
+#: includes/class-catalog.php:256
 msgid "SKU / item number is required."
 msgstr ""
 
-#: includes/class-catalog.php:257
+#: includes/class-catalog.php:258
 msgid "SKU may contain only letters, numbers, spaces and . _ - / # characters."
 msgstr ""
 
-#: includes/class-catalog.php:262
+#: includes/class-catalog.php:263
 msgid "Literature name is required."
 msgstr ""
 
-#: includes/class-catalog.php:271
+#: includes/class-catalog.php:272
 msgid "Price must be a non-negative amount with at most two decimal places."
 msgstr ""
 
-#: includes/class-catalog.php:289
+#: includes/class-catalog.php:290
 msgid "Image URL must be a valid http(s) URL."
 msgstr ""
 
-#: includes/class-catalog.php:296
+#: includes/class-catalog.php:299
+msgid "Reference link must be a valid http(s) URL."
+msgstr ""
+
+#: includes/class-catalog.php:306
 msgid "Another item in this catalog already uses that SKU."
 msgstr ""
 
-#: includes/class-catalog.php:468
+#: includes/class-catalog.php:478
 msgid "This item appears on historical orders and cannot be deleted. Deactivate it instead."
 msgstr ""
 
-#: includes/class-email.php:73
+#: includes/class-email.php:83
 msgid "No valid email recipients are configured."
 msgstr ""
 
-#: includes/class-email.php:96
+#: includes/class-email.php:106
 msgid "WordPress could not send the email."
 msgstr ""
 
-#: includes/class-email.php:121 includes/class-email.php:164
+#: includes/class-email.php:131
+#: includes/class-email.php:174
 msgid "SPECIAL ORDER NOTICE"
 msgstr ""
 
-#: includes/class-email.php:126 includes/class-email.php:167
+#. translators: %s: turnaround, e.g. "approximately one month".
+#. translators: %s: turnaround.
+#: includes/class-email.php:136
+#: includes/class-email.php:177
 #, php-format
 msgid "This order contains literature that is not currently in stock. Special-order literature may take %s to order and stock before delivery."
 msgstr ""
 
-#: includes/class-email.php:130 includes/class-email.php:168
+#: includes/class-email.php:140
+#: includes/class-email.php:178
 msgid "Special-order items:"
 msgstr ""
 
-#: includes/class-email.php:137
+#. translators: %d: quantity.
+#: includes/class-email.php:147
 #, php-format
 msgid "%d from stock"
 msgstr ""
 
-#: includes/class-email.php:156
+#. translators: 1: SKU, 2: name, 3: quantity.
+#: includes/class-email.php:166
 #, php-format
 msgid "  * %1$s – %2$s – %3$d special order"
 msgstr ""
 
-#: includes/class-email.php:183
+#. translators: 1: in-stock quantity, 2: special-order quantity.
+#: includes/class-email.php:193
 #, php-format
 msgid "%1$d in stock / %2$d SPECIAL ORDER"
 msgstr ""
 
-#: includes/class-email.php:186 includes/class-email.php:325
+#: includes/class-email.php:196
+#: includes/class-email.php:335
 msgid "SPECIAL ORDER"
 msgstr ""
 
-#: includes/class-email.php:188
+#: includes/class-email.php:198
 msgid "In Stock (low)"
 msgstr ""
 
-#: includes/class-email.php:202
+#: includes/class-email.php:198
+#: includes/class-helpers.php:166
+#: public/class-front.php:338
+msgid "In Stock"
+msgstr ""
+
+#: includes/class-email.php:212
+#: public/class-front.php:789
+msgid "Unit Price"
+msgstr ""
+
+#: includes/class-email.php:212
+#: public/class-front.php:790
+msgid "Line Total"
+msgstr ""
+
+#: includes/class-email.php:212
 msgid "Stock Status"
 msgstr ""
 
-#: includes/class-email.php:319
+#: includes/class-email.php:252
+#: public/class-front.php:791
+msgid "Stock"
+msgstr ""
+
+#: includes/class-email.php:288
+#: public/class-front.php:277
+msgid "Area Service meeting:"
+msgstr ""
+
+#. translators: %s: date.
+#: includes/class-email.php:293
+#: public/class-front.php:282
+#, php-format
+msgid "Next Area Service meeting: %s."
+msgstr ""
+
+#: includes/class-email.php:329
 msgid "(none)"
 msgstr ""
 
-#: includes/class-email.php:443
+#. translators: %d: number of recipients.
+#: includes/class-email.php:453
 msgid "Literature-worker notification FAILED:"
 msgstr ""
 
-#: includes/class-email.php:443
+#. translators: %d: number of recipients.
+#: includes/class-email.php:453
 #, php-format
 msgid "Literature-worker notification sent to %d recipient(s)."
 msgstr ""
 
-#: includes/class-email.php:450
+#: includes/class-email.php:460
 msgid "Administrator copy FAILED."
 msgstr ""
 
-#: includes/class-email.php:450
+#: includes/class-email.php:460
 msgid "Administrator copy sent."
 msgstr ""
 
-#: includes/class-email.php:457
+#: includes/class-email.php:467
 msgid "Requester confirmation FAILED."
 msgstr ""
 
-#: includes/class-email.php:457
+#: includes/class-email.php:467
 msgid "Requester confirmation sent."
 msgstr ""
 
-#: includes/class-email.php:483
+#: includes/class-email.php:493
 msgid "Resend of literature-worker notification FAILED:"
 msgstr ""
 
-#: includes/class-email.php:485
+#. translators: %d: number of recipients.
+#: includes/class-email.php:495
 #, php-format
 msgid "Literature-worker notification resent to %d recipient(s)."
 msgstr ""
 
-#: includes/class-email.php:504
+#: includes/class-email.php:514
 msgid "This order has no valid requester email address."
 msgstr ""
 
-#: includes/class-email.php:519
+#: includes/class-email.php:529
 msgid "Email to requester FAILED:"
 msgstr ""
 
-#: includes/class-email.php:519
+#: includes/class-email.php:529
 msgid "Email sent to requester:"
 msgstr ""
 
-#: includes/class-helpers.php:164
+#: includes/class-helpers.php:170
+#: public/class-front.php:339
+msgid "Low Stock"
+msgstr ""
+
+#: includes/class-helpers.php:178
 msgid "Partly Special Order"
 msgstr ""
 
-#: includes/class-helpers.php:202
+#: includes/class-helpers.php:216
 msgid "New"
 msgstr ""
 
-#: includes/class-helpers.php:203
+#: includes/class-helpers.php:217
 msgid "Reviewed"
 msgstr ""
 
-#: includes/class-helpers.php:205
+#: includes/class-helpers.php:219
 msgid "Ready"
 msgstr ""
 
-#: includes/class-helpers.php:208
+#: includes/class-helpers.php:222
 msgid "Cancelled"
 msgstr ""
 
-#: includes/class-import-export.php:116
+#: includes/class-import-export.php:119
 msgid "The JSON is too large (maximum 2 MB)."
 msgstr ""
 
-#: includes/class-import-export.php:120
+#: includes/class-import-export.php:123
 msgid "No JSON was provided."
 msgstr ""
 
-#: includes/class-import-export.php:125
+#. translators: %s: JSON error.
+#: includes/class-import-export.php:128
 #, php-format
 msgid "The JSON could not be read: %s"
 msgstr ""
 
-#: includes/class-import-export.php:128
+#: includes/class-import-export.php:131
 msgid "The JSON must be an object."
 msgstr ""
 
-#: includes/class-import-export.php:144
+#: includes/class-import-export.php:147
 msgid "This is not a BMLT Literature Manager catalog file (format field missing or wrong)."
 msgstr ""
 
-#: includes/class-import-export.php:147
+#: includes/class-import-export.php:150
 msgid "Unsupported catalog file version. Please update the plugin."
 msgstr ""
 
-#: includes/class-import-export.php:150 includes/class-import-export.php:292
+#: includes/class-import-export.php:153
+#: includes/class-import-export.php:298
 msgid "The file must contain an \"items\" list."
 msgstr ""
 
-#: includes/class-import-export.php:153
+#: includes/class-import-export.php:156
 msgid "Too many items in one file."
 msgstr ""
 
-#: includes/class-import-export.php:178
+#. translators: %d: row number.
+#: includes/class-import-export.php:181
 #, php-format
 msgid "Item %d"
 msgstr ""
 
-#: includes/class-import-export.php:180
+#: includes/class-import-export.php:183
 msgid "must be an object."
 msgstr ""
 
-#: includes/class-import-export.php:191
+#. translators: %s: field.
+#: includes/class-import-export.php:194
 #, php-format
 msgid "field \"%s\" must be a simple value."
 msgstr ""
 
-#: includes/class-import-export.php:215
+#: includes/class-import-export.php:220
 msgid "duplicate SKU in file."
 msgstr ""
 
-#: includes/class-import-export.php:286
+#: includes/class-import-export.php:292
 msgid "This is not a BMLT Literature Manager inventory file."
 msgstr ""
 
-#: includes/class-import-export.php:289
+#: includes/class-import-export.php:295
 msgid "Unsupported inventory file version."
 msgstr ""
 
-#: includes/class-import-export.php:296
+#: includes/class-import-export.php:302
 msgid "Choose a managed Area to import inventory into."
 msgstr ""
 
-#: includes/class-import-export.php:319
+#. translators: %d: row number.
+#: includes/class-import-export.php:325
 #, php-format
 msgid "Row %d"
 msgstr ""
 
-#: includes/class-import-export.php:321
+#: includes/class-import-export.php:327
 msgid "missing SKU."
 msgstr ""
 
-#: includes/class-import-export.php:337
+#. translators: %s: SKU.
+#: includes/class-import-export.php:343
 #, php-format
 msgid "no catalog item with SKU \"%s\" is available to this Area."
 msgstr ""
 
-#: includes/class-import-export.php:349
+#. translators: %s: field.
+#: includes/class-import-export.php:355
 #, php-format
 msgid "\"%s\" must be a whole number of zero or more."
 msgstr ""
 
-#: includes/class-import-export.php:356
+#. translators: %s: field.
+#: includes/class-import-export.php:362
 #, php-format
 msgid "\"%s\" is out of range."
 msgstr ""
 
-#: includes/class-import-export.php:405
+#. translators: %s: field.
+#: includes/class-import-export.php:374
+#, php-format
+msgid "\"%s\" must be true or false."
+msgstr ""
+
+#: includes/class-import-export.php:425
 msgid "JSON inventory import"
 msgstr ""
 
-#: includes/class-import-export.php:486
+#: includes/class-import-export.php:506
 msgid "This is not a BMLT Literature Manager full backup file."
 msgstr ""
 
-#: includes/class-import-export.php:489
+#: includes/class-import-export.php:509
 msgid "Unsupported backup version."
 msgstr ""
 
-#: includes/class-import-export.php:492
+#: includes/class-import-export.php:512
 msgid "The backup contains no documents."
 msgstr ""
 
-#: includes/class-import-export.php:571
+#: includes/class-import-export.php:591
 msgid "The backup does not contain settings or a catalog."
 msgstr ""
 
-#: includes/class-inventory.php:169
+#: includes/class-inventory.php:226
 msgid "That Area is not managed by this site."
 msgstr ""
 
-#: includes/class-inventory.php:177
+#: includes/class-inventory.php:234
 msgid "That literature item does not exist."
 msgstr ""
 
-#: includes/class-inventory.php:180
+#: includes/class-inventory.php:237
 msgid "That item belongs to a different Area’s catalog."
 msgstr ""
 
-#: includes/class-migrator.php:112
+#: includes/class-migrator.php:139
 msgid "No version 1.0 database data was found."
 msgstr ""
 
-#: includes/class-migrator.php:326
+#: includes/class-migrator.php:353
 msgid "Legacy data can only be removed after it has been migrated to JSON storage."
 msgstr ""
 
-#: includes/class-orders.php:295
-msgid "Please choose at least one literature item."
-msgstr ""
-
-#: includes/class-orders.php:314
+#: includes/class-orders.php:293
 msgid "One or more selected literature items are no longer available for this Area. Please review your order."
 msgstr ""
 
-#: includes/class-orders.php:409
+#: includes/class-orders.php:400
+#: includes/class-orders.php:438
+msgid "Please choose at least one literature item."
+msgstr ""
+
+#: includes/class-orders.php:500
 msgid "Order submitted."
 msgstr ""
 
-#: includes/class-orders.php:451
+#: includes/class-orders.php:542
 msgid "Invalid order status."
 msgstr ""
 
-#: includes/class-orders.php:473
+#: includes/class-orders.php:564
 msgid "The order already has that status."
 msgstr ""
 
-#: includes/class-orders.php:476
+#: includes/class-orders.php:567
 msgid "Fulfilled and cancelled orders are final and cannot be changed. Submit a new order if needed."
 msgstr ""
 
-#: includes/class-orders.php:529
+#. translators: 1: old status, 2: new status.
+#: includes/class-orders.php:620
 #, php-format
 msgid "Status changed from %1$s to %2$s."
 msgstr ""
 
-#: includes/class-orders.php:534
+#: includes/class-orders.php:625
 msgid "Inventory:"
 msgstr ""
 
-#: includes/class-orders.php:892 includes/class-orders.php:894
+#: includes/class-orders.php:1031
 msgid "[removed]"
 msgstr ""
 
-#: includes/class-permissions.php:135
+#: includes/class-permissions.php:136
 msgid "View orders"
 msgstr ""
 
-#: includes/class-permissions.php:136
+#: includes/class-permissions.php:137
 msgid "Manage orders"
 msgstr ""
 
-#: includes/class-permissions.php:137
+#: includes/class-permissions.php:138
 msgid "Manage inventory"
 msgstr ""
 
-#: includes/class-permissions.php:138
+#: includes/class-permissions.php:139
 msgid "Manage catalog"
 msgstr ""
 
-#: includes/class-permissions.php:139
+#: includes/class-permissions.php:140
 msgid "Manage settings"
 msgstr ""
 
-#: includes/class-permissions.php:150
+#: includes/class-permissions.php:151
 msgid "Literature Worker"
 msgstr ""
 
-#: includes/class-permissions.php:162
+#: includes/class-permissions.php:163
 msgid "Literature Chair"
 msgstr ""
 
-#: includes/class-privacy.php:77 includes/class-settings.php:449
+#: includes/class-privacy.php:78
+#: includes/class-settings.php:463
 msgid "Order Number"
 msgstr ""
 
-#: includes/class-privacy.php:81 includes/class-settings.php:455
+#: includes/class-privacy.php:82
+#: includes/class-settings.php:469
 msgid "Order Date"
 msgstr ""
 
-#: includes/class-privacy.php:93 includes/class-settings.php:452
+#: includes/class-privacy.php:94
+#: includes/class-settings.php:466
 msgid "Contact Name"
 msgstr ""
 
-#: includes/class-privacy.php:138
+#: includes/class-privacy.php:139
 msgid "Literature order contact details were anonymized; order items and totals were retained for literature accounting."
 msgstr ""
 
-#: includes/class-privacy.php:150
+#: includes/class-privacy.php:151
 msgid "When you place a literature order we store your selected meeting, your name, phone number, email address, any notes you provide and the literature you ordered. This information is used only by authorized literature trusted servants to process and deliver your order. A one-way hash of your IP address is stored to protect the order form from abuse."
 msgstr ""
 
-#: includes/class-privacy.php:151
-msgid "BMLT Literature Manager"
-msgstr ""
-
-#: includes/class-rest.php:38
+#: includes/class-rest.php:39
 msgid "You must be logged in."
 msgstr ""
 
-#: includes/class-rest.php:306
+#. translators: 1: start date, 2: end date.
+#: includes/class-rest.php:307
 #, php-format
 msgid "%1$s – %2$s"
 msgstr ""
 
-#: includes/class-rest.php:502
+#: includes/class-rest.php:508
 msgid "Inventory saved."
 msgstr ""
 
-#: includes/class-rest.php:502
+#: includes/class-rest.php:508
 msgid "No changes."
 msgstr ""
 
-#: includes/class-rest.php:577
+#: includes/class-rest.php:583
 msgid "You may only add items to catalogs for your own Areas."
 msgstr ""
 
-#: includes/class-rest.php:585
+#: includes/class-rest.php:591
 msgid "Item added."
 msgstr ""
 
-#: includes/class-rest.php:604
+#: includes/class-rest.php:610
 msgid "You may only move items into catalogs for your own Areas."
 msgstr ""
 
-#: includes/class-rest.php:675
+#: includes/class-rest.php:681
 msgid "Unknown Area."
 msgstr ""
 
-#: includes/class-settings.php:182
+#: includes/class-settings.php:183
 msgid "In-stock literature can normally be received at the next Area Service meeting for your Area."
 msgstr ""
 
-#: includes/class-settings.php:183
+#: includes/class-settings.php:184
 msgid "In-stock literature may be delivered at the next Area Service meeting for this Area."
 msgstr ""
 
-#: includes/class-settings.php:184
+#: includes/class-settings.php:185
 msgid "Special Order – Allow approximately one month for ordering and stocking before delivery."
 msgstr ""
 
-#: includes/class-settings.php:185
+#: includes/class-settings.php:186
 msgid "approximately one month"
 msgstr ""
 
-#: includes/class-settings.php:348
+#. translators: %d: BMLT service body ID.
+#: includes/class-settings.php:362
 #, php-format
 msgid "Area #%d"
 msgstr ""
 
-#: includes/class-settings.php:433
+#: includes/class-settings.php:447
 msgid "Literature-worker order notification"
 msgstr ""
 
-#: includes/class-settings.php:434
+#: includes/class-settings.php:448
 msgid "Administrator notification"
 msgstr ""
 
-#: includes/class-settings.php:435
+#: includes/class-settings.php:449
 msgid "Requester confirmation"
 msgstr ""
 
-#: includes/class-settings.php:436
+#: includes/class-settings.php:450
 msgid "Order-ready notification (to requester)"
 msgstr ""
 
-#: includes/class-settings.php:437
+#: includes/class-settings.php:451
 msgid "Special-order notification (to requester)"
 msgstr ""
 
-#: includes/class-settings.php:438
+#: includes/class-settings.php:452
 msgid "Message to requester (from order screen)"
 msgstr ""
 
-#: includes/class-settings.php:451
+#: includes/class-settings.php:465
 msgid "Meeting Name"
 msgstr ""
 
-#: includes/class-settings.php:453
+#: includes/class-settings.php:467
 msgid "Phone Number"
 msgstr ""
 
-#: includes/class-settings.php:454
+#: includes/class-settings.php:468
 msgid "Email Address"
 msgstr ""
 
-#: includes/class-settings.php:462
+#. translators: Do not translate placeholders in braces.
+#: includes/class-settings.php:476
 msgid "[{area_name}] Literature Order {order_number}{special_order_flag}"
 msgstr ""
 
-#: includes/class-settings.php:463
+#: includes/class-settings.php:477
 msgid "New Literature Order"
 msgstr ""
 
-#: includes/class-settings.php:464
+#: includes/class-settings.php:478
 msgid "Literature Ordered"
 msgstr ""
 
-#: includes/class-settings.php:465 includes/class-settings.php:470
+#: includes/class-settings.php:479
+#: includes/class-settings.php:484
 msgid "Open this order"
 msgstr ""
 
-#: includes/class-settings.php:468
+#: includes/class-settings.php:482
 msgid "[Admin copy] Literature Order {order_number} – {area_name}{special_order_flag}"
 msgstr ""
 
-#: includes/class-settings.php:469
+#: includes/class-settings.php:483
 msgid "Literature Order (administrator copy)"
 msgstr ""
 
-#: includes/class-settings.php:473
+#: includes/class-settings.php:487
 msgid "Your literature order {order_number} has been received"
 msgstr ""
 
-#: includes/class-settings.php:474 includes/class-settings.php:480 includes/class-settings.php:485 includes/class-settings.php:490
+#: includes/class-settings.php:488
+#: includes/class-settings.php:494
+#: includes/class-settings.php:499
+#: includes/class-settings.php:504
 msgid "Hello"
 msgstr ""
 
-#: includes/class-settings.php:475
+#: includes/class-settings.php:489
 msgid "Thank you. Your literature order has been received by the literature team for"
 msgstr ""
 
-#: includes/class-settings.php:479
+#: includes/class-settings.php:493
 msgid "Your literature order {order_number} is ready"
 msgstr ""
 
-#: includes/class-settings.php:481
+#: includes/class-settings.php:495
 msgid "Your literature order is ready."
 msgstr ""
 
-#: includes/class-settings.php:484
+#: includes/class-settings.php:498
 msgid "Special-order update for literature order {order_number}"
 msgstr ""
 
-#: includes/class-settings.php:486
+#: includes/class-settings.php:500
 msgid "Your order includes special-order literature that is being obtained for you."
 msgstr ""
 
-#: includes/class-settings.php:489
+#: includes/class-settings.php:503
 msgid "About your literature order {order_number}"
 msgstr ""
 
-#: includes/class-settings.php:526
+#: includes/class-settings.php:540
 msgid "Order number"
 msgstr ""
 
-#: includes/class-settings.php:527
+#: includes/class-settings.php:541
 msgid "Order date/time"
 msgstr ""
 
-#: includes/class-settings.php:528
+#: includes/class-settings.php:542
 msgid "Current order status"
 msgstr ""
 
-#: includes/class-settings.php:529
+#: includes/class-settings.php:543
 msgid "Area name"
 msgstr ""
 
-#: includes/class-settings.php:530
+#: includes/class-settings.php:544
 msgid "Meeting name"
 msgstr ""
 
-#: includes/class-settings.php:531
+#: includes/class-settings.php:545
 msgid "Meeting day, time and location"
 msgstr ""
 
-#: includes/class-settings.php:532
+#: includes/class-settings.php:546
 msgid "Requester name"
 msgstr ""
 
-#: includes/class-settings.php:533
+#: includes/class-settings.php:547
 msgid "Requester phone"
 msgstr ""
 
-#: includes/class-settings.php:534
+#: includes/class-settings.php:548
 msgid "Requester email"
 msgstr ""
 
-#: includes/class-settings.php:535
+#: includes/class-settings.php:549
 msgid "Requester notes"
 msgstr ""
 
-#: includes/class-settings.php:536
+#: includes/class-settings.php:550
 msgid "Table of ordered literature"
 msgstr ""
 
-#: includes/class-settings.php:537
+#: includes/class-settings.php:551
 msgid "Total number of items"
 msgstr ""
 
-#: includes/class-settings.php:538
+#: includes/class-settings.php:552
 msgid "Order subtotal"
 msgstr ""
 
-#: includes/class-settings.php:539
+#: includes/class-settings.php:553
 msgid "Order total"
 msgstr ""
 
-#: includes/class-settings.php:540
+#: includes/class-settings.php:554
 msgid "Special-order warning block (empty if none)"
 msgstr ""
 
-#: includes/class-settings.php:541
+#: includes/class-settings.php:555
 msgid "Short “SPECIAL ORDER” subject flag (empty if none)"
 msgstr ""
 
-#: includes/class-settings.php:542
+#: includes/class-settings.php:556
 msgid "Area Service delivery message"
 msgstr ""
 
-#: includes/class-settings.php:543
+#: includes/class-settings.php:557
 msgid "Message typed by the literature worker"
 msgstr ""
 
-#: includes/class-settings.php:544
+#: includes/class-settings.php:558
 msgid "Link to the order (staff only)"
 msgstr ""
 
-#: includes/class-settings.php:546
+#: includes/class-settings.php:560
 msgid "Website name"
 msgstr ""
 
-#: includes/class-smtp.php:273
+#: includes/class-smtp.php:274
 msgid "Please enter a valid email address for the test."
 msgstr ""
 
-#: includes/class-smtp.php:276
+#: includes/class-smtp.php:277
 msgid "Custom SMTP"
 msgstr ""
 
-#: includes/class-smtp.php:277
+#: includes/class-smtp.php:278
 msgid "BMLT Literature Manager test email"
 msgstr ""
 
-#: includes/class-smtp.php:279
+#. translators: 1: delivery method, 2: date/time.
+#: includes/class-smtp.php:280
 #, php-format
 msgid "This is a test email from BMLT Literature Manager sent using: %1$s at %2$s."
 msgstr ""
 
-#: includes/class-store.php:152
+#. translators: %s: directory path.
+#: includes/class-store.php:201
 #, php-format
 msgid "The literature data directory could not be created: %s. Create it manually and make it writable by the web server, or define BMLT_LIT_DATA_DIR in wp-config.php."
 msgstr ""
 
-#: includes/class-store.php:168
+#. translators: %s: directory path.
+#: includes/class-store.php:217
 #, php-format
 msgid "The literature data directory is not writable: %s"
 msgstr ""
 
-#: includes/class-store.php:232
+#. translators: %s: file name.
+#: includes/class-store.php:284
 #, php-format
 msgid "The data file \"%s\" is damaged and could not be read. No changes were saved. Restore it from a backup (Literature → Tools / Status)."
 msgstr ""
 
-#: includes/class-store.php:368
+#: includes/class-store.php:420
 msgid "The literature data could not be saved because of a system problem. Please try again."
 msgstr ""
 
-#: includes/class-store.php:417
+#: includes/class-store.php:469
 msgid "The literature data could not be saved (directory not writable)."
 msgstr ""
 
-#: includes/class-store.php:422
+#: includes/class-store.php:474
 msgid "The literature data could not be encoded for saving."
 msgstr ""
 
-#: includes/class-store.php:430
+#: includes/class-store.php:482
 msgid "The literature data could not be saved (disk full or not writable)."
 msgstr ""
 
-#: includes/class-store.php:451
+#: includes/class-store.php:503
 msgid "The literature data could not be saved (rename failed)."
 msgstr ""
 
-#: includes/class-store.php:536
+#: includes/class-store.php:588
 msgid "The literature data is busy. Please try again in a moment."
 msgstr ""
 
-#: includes/class-store.php:592
+#: includes/class-store.php:644
 msgid "A backup snapshot could not be created."
+msgstr ""
+
+#: public/class-front.php:166
+msgid "Items per page"
+msgstr ""
+
+#: public/class-front.php:167
+#: public/class-front.php:354
+msgid "All"
+msgstr ""
+
+#: public/class-front.php:168
+msgid "Previous"
+msgstr ""
+
+#: public/class-front.php:169
+msgid "Next"
+msgstr ""
+
+#: public/class-front.php:170
+msgid "Page"
+msgstr ""
+
+#. translators: %s: number of pages.
+#: public/class-front.php:172
+#, php-format
+msgid "of %s"
+msgstr ""
+
+#. translators: 1: first item number, 2: last item number, 3: total items.
+#: public/class-front.php:174
+#, php-format
+msgid "Showing %1$s–%2$s of %3$s"
+msgstr ""
+
+#: public/class-front.php:175
+msgid "Pages"
+msgstr ""
+
+#: public/class-front.php:176
+msgid "Pages (end of list)"
+msgstr ""
+
+#. translators: %s: number of items.
+#: public/class-front.php:178
+#, php-format
+msgid "Items you chose on other pages: %s. They stay in your order."
+msgstr ""
+
+#: public/class-front.php:230
+msgid "That order confirmation link is invalid or has expired."
+msgstr ""
+
+#: public/class-front.php:249
+msgid "Literature ordering is not available yet. An administrator needs to select the Areas served by this site."
+msgstr ""
+
+#: public/class-front.php:260
+msgid "The meeting list is temporarily unavailable, so literature orders cannot be placed right now. Please try again later."
+msgstr ""
+
+#. translators: 1: in-stock quantity, 2: special-order quantity.
+#: public/class-front.php:344
+#, php-format
+msgid "%1$s from stock, %2$s special order"
+msgstr ""
+
+#: public/class-front.php:345
+msgid "This line will be special ordered."
+msgstr ""
+
+#. translators: %s: available quantity.
+#: public/class-front.php:347
+#, php-format
+msgid "%s available"
+msgstr ""
+
+#: public/class-front.php:348
+#: public/views/order-form.php:108
+msgid "— Select your meeting —"
+msgstr ""
+
+#: public/class-front.php:349
+msgid "No meetings match your search."
+msgstr ""
+
+#: public/class-front.php:350
+msgid "Submitting…"
+msgstr ""
+
+#. translators: %s: Area name.
+#: public/class-front.php:352
+#: public/views/order-form.php:122
+#, php-format
+msgid "Your Area: %s"
+msgstr ""
+
+#: public/class-front.php:353
+msgid "Literature groups"
+msgstr ""
+
+#: public/class-front.php:355
+msgid "Sort by:"
+msgstr ""
+
+#: public/class-front.php:356
+msgid "sorted ascending"
+msgstr ""
+
+#: public/class-front.php:357
+msgid "sorted descending"
+msgstr ""
+
+#: public/class-front.php:358
+msgid "not sorted"
+msgstr ""
+
+#. translators: 1: column name, 2: sort direction.
+#: public/class-front.php:360
+#, php-format
+msgid "Sorted by %1$s, %2$s."
+msgstr ""
+
+#: public/class-front.php:361
+msgid "Default order: catalog order with special orders last."
+msgstr ""
+
+#: public/class-front.php:362
+msgid "Other"
+msgstr ""
+
+#. translators: 1: special-order quantity, 2: quantity ordered.
+#: public/class-front.php:364
+#, php-format
+msgid "%1$s of %2$s"
+msgstr ""
+
+#: public/class-front.php:502
+msgid "Your order could not be saved. Please try again."
+msgstr ""
+
+#: public/class-front.php:553
+msgid "Your session expired before the order was sent. Please review the form and submit again."
+msgstr ""
+
+#: public/class-front.php:558
+msgid "Your order could not be accepted. Please try again."
+msgstr ""
+
+#: public/class-front.php:564
+msgid "This form has expired. Please reload the page and try again."
+msgstr ""
+
+#: public/class-front.php:567
+msgid "The form was submitted too quickly. Please wait a moment and submit again."
+msgstr ""
+
+#: public/class-front.php:580
+msgid "Too many orders have been submitted from your connection recently. Please wait a few minutes and try again."
+msgstr ""
+
+#: public/class-front.php:595
+msgid "Please complete the verification challenge."
+msgstr ""
+
+#: public/class-front.php:602
+#: public/class-front.php:662
+msgid "The order form is invalid. Please reload the page."
+msgstr ""
+
+#: public/class-front.php:609
+msgid "Please select your meeting from the list."
+msgstr ""
+
+#: public/class-front.php:611
+msgid "The selected meeting is not served by this order form."
+msgstr ""
+
+#: public/class-front.php:617
+msgid "Please enter your name."
+msgstr ""
+
+#: public/class-front.php:621
+msgid "Please enter a phone number."
+msgstr ""
+
+#: public/class-front.php:623
+msgid "Please enter a valid phone number."
+msgstr ""
+
+#: public/class-front.php:627
+msgid "Please enter your email address."
+msgstr ""
+
+#: public/class-front.php:629
+msgid "Please enter a valid email address."
+msgstr ""
+
+#: public/class-front.php:637
+msgid "Quantities cannot be negative."
+msgstr ""
+
+#. translators: %d: maximum quantity.
+#: public/class-front.php:642
+#, php-format
+msgid "The maximum quantity per item is %d."
+msgstr ""
+
+#: public/class-front.php:650
+msgid "Too many different items in one order."
+msgstr ""
+
+#: public/class-front.php:653
+msgid "Please enter a quantity for at least one literature item."
+msgstr ""
+
+#: public/class-front.php:710
+msgid "Please log in to access the literature tools."
+msgstr ""
+
+#: public/class-front.php:710
+msgid "Log in"
+msgstr ""
+
+#: public/class-front.php:715
+msgid "No Areas are assigned to your account yet. Please contact the site administrator."
+msgstr ""
+
+#: public/class-front.php:720
+msgid "You do not have permission to access the literature tools."
+msgstr ""
+
+#: public/class-front.php:750
+msgid "Loading…"
+msgstr ""
+
+#: public/class-front.php:751
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: public/class-front.php:752
+msgid "No orders found for this period."
+msgstr ""
+
+#: public/class-front.php:753
+#: public/views/orders-app.php:104
+msgid "Load Previous 45 Days"
+msgstr ""
+
+#: public/class-front.php:754
+#: public/views/orders-app.php:103
+msgid "Load more"
+msgstr ""
+
+#: public/class-front.php:755
+msgid "There are no older orders."
+msgstr ""
+
+#: public/class-front.php:761
+msgid "Close"
+msgstr ""
+
+#: public/class-front.php:762
+msgid "Save"
+msgstr ""
+
+#: public/class-front.php:763
+msgid "Saved."
+msgstr ""
+
+#: public/class-front.php:768
+msgid "Permanently delete this item? This cannot be undone."
+msgstr ""
+
+#: public/class-front.php:780
+msgid "Send"
+msgstr ""
+
+#: public/class-front.php:781
+msgid "Add Note"
+msgstr ""
+
+#: public/class-front.php:782
+msgid "Email the requester about this status"
+msgstr ""
+
+#: public/class-front.php:803
+msgid "from stock"
+msgstr ""
+
+#: public/class-front.php:816
+#: public/views/manager.php:177
+msgid "Actions"
+msgstr ""
+
+#: public/class-front.php:817
+msgid "Increase"
+msgstr ""
+
+#: public/class-front.php:818
+msgid "Decrease"
+msgstr ""
+
+#: public/class-front.php:820
+msgid "Choose an Area to see its inventory."
+msgstr ""
+
+#: public/class-front.php:822
+#: public/views/manager.php:88
+#: public/views/manager.php:93
+msgid "Add Item"
+msgstr ""
+
+#: public/class-front.php:823
+msgid "Edit Item"
+msgstr ""
+
+#: public/class-front.php:824
+msgid "Open in admin"
+msgstr ""
+
+#: public/class-front.php:827
+msgid "Showing orders from"
+msgstr ""
+
+#: public/class-front.php:828
+msgid "orders"
+msgstr ""
+
+#: public/class-front.php:920
+msgid "This print link has expired. Please reopen the order and try again."
+msgstr ""
+
+#: public/class-front.php:923
+msgid "You do not have permission to view this order."
+msgstr ""
+
+#: public/views/confirmation.php:25
+msgid "Thank you — your order has been received"
+msgstr ""
+
+#: public/views/confirmation.php:27
+msgid "Order number:"
+msgstr ""
+
+#: public/views/confirmation.php:29
+msgid "Please keep this order number for your records."
+msgstr ""
+
+#. translators: %s: turnaround, e.g. approximately one month.
+#: public/views/confirmation.php:39
+#, php-format
+msgid "Some literature is not currently in stock for your Area and must be ordered. Special-order items may require %s to obtain and stock before delivery."
+msgstr ""
+
+#: public/views/confirmation.php:53
+msgid "Submitted"
+msgstr ""
+
+#: public/views/confirmation.php:61
+msgid "Literature ordered"
+msgstr ""
+
+#: public/views/confirmation.php:71
+#: public/views/confirmation.php:84
+msgid "Availability"
+msgstr ""
+
+#: public/views/confirmation.php:114
+msgid "Place another order"
+msgstr ""
+
+#: public/views/manager.php:22
+msgid "Literature Catalog"
+msgstr ""
+
+#: public/views/manager.php:28
+msgid "The literature workspace requires JavaScript. You can also use the Literature menu in the WordPress dashboard."
+msgstr ""
+
+#: public/views/manager.php:30
+msgid "Literature tools"
+msgstr ""
+
+#: public/views/manager.php:56
+msgid "Title or SKU"
+msgstr ""
+
+#: public/views/manager.php:60
+msgid "Show only low / out of stock"
+msgstr ""
+
+#: public/views/manager.php:64
+msgid "Inventory for the selected Area"
+msgstr ""
+
+#: public/views/manager.php:76
+msgid "All catalogs I can see"
+msgstr ""
+
+#: public/views/manager.php:85
+msgid "Title, SKU or category"
+msgstr ""
+
+#: public/views/manager.php:133
+msgid "NAWS product ID"
+msgstr ""
+
+#: public/views/manager.php:137
+msgid "Reference link"
+msgstr ""
+
+#: public/views/manager.php:141
+msgid "Image URL"
+msgstr ""
+
+#: public/views/order-form.php:59
+#: public/views/review.php:36
+msgid "Order progress"
+msgstr ""
+
+#: public/views/order-form.php:60
+#: public/views/review.php:37
+msgid "Choose literature"
+msgstr ""
+
+#: public/views/order-form.php:61
+#: public/views/review.php:38
+msgid "Review order"
+msgstr ""
+
+#: public/views/order-form.php:62
+#: public/views/review.php:39
+msgid "Confirmation"
+msgstr ""
+
+#. translators: %s: date/time.
+#: public/views/order-form.php:71
+#, php-format
+msgid "Administrator notice: the BMLT server could not be reached, so meeting information cached on %s is being used."
+msgstr ""
+
+#: public/views/order-form.php:81
+msgid "Your order has not been sent yet. Please correct the following:"
+msgstr ""
+
+#: public/views/order-form.php:91
+msgid "Live totals and stock indicators need JavaScript. You can still submit your order; totals and stock are always calculated when the order is received."
+msgstr ""
+
+#: public/views/order-form.php:98
+msgid "Your meeting"
+msgstr ""
+
+#: public/views/order-form.php:101
+msgid "Find your meeting"
+msgstr ""
+
+#: public/views/order-form.php:102
+msgid "Type a meeting name, city or day"
+msgstr ""
+
+#: public/views/order-form.php:129
+msgid "Your contact details"
+msgstr ""
+
+#: public/views/order-form.php:145
+msgid "Notes or comments (optional)"
+msgstr ""
+
+#: public/views/order-form.php:148
+msgid "Required"
+msgstr ""
+
+#: public/views/order-form.php:156
+msgid "Search all literature"
+msgstr ""
+
+#: public/views/order-form.php:162
+msgid "Select your meeting above to see which items are special orders for your Area."
+msgstr ""
+
+#: public/views/order-form.php:166
+msgid "No literature is available to order right now."
+msgstr ""
+
+#: public/views/order-form.php:172
+msgid "Quantity"
+msgstr ""
+
+#. translators: %s: website host.
+#: public/views/order-form.php:195
+#, php-format
+msgid "View on %s"
+msgstr ""
+
+#. translators: %s: website host.
+#: public/views/order-form.php:195
+msgid "(opens in a new tab)"
+msgstr ""
+
+#. translators: %s: item name.
+#: public/views/order-form.php:205
+#: public/views/review.php:94
+#, php-format
+msgid "Quantity of %s"
+msgstr ""
+
+#. translators: %s: item name.
+#: public/views/order-form.php:207
+#, php-format
+msgid "Decrease quantity of %s"
+msgstr ""
+
+#. translators: %s: item name.
+#: public/views/order-form.php:209
+#, php-format
+msgid "Increase quantity of %s"
+msgstr ""
+
+#: public/views/order-form.php:215
+msgid "No literature matches your search."
+msgstr ""
+
+#: public/views/order-form.php:220
+msgid "Order summary"
+msgstr ""
+
+#: public/views/order-form.php:233
+msgid "You will see a full review of your order, with confirmed prices, before anything is sent."
+msgstr ""
+
+#: public/views/order-form.php:238
+msgid "Leave this field empty"
+msgstr ""
+
+#: public/views/order-form.php:258
+msgid "Review order →"
+msgstr ""
+
+#: public/views/orders-app.php:18
+msgid "Filter orders"
+msgstr ""
+
+#: public/views/orders-app.php:34
+msgid "Open (not fulfilled/cancelled)"
+msgstr ""
+
+#: public/views/orders-app.php:44
+msgid "With special-order items"
+msgstr ""
+
+#: public/views/orders-app.php:45
+msgid "Without special-order items"
+msgstr ""
+
+#: public/views/orders-app.php:49
+msgid "Order #, name, email or phone"
+msgstr ""
+
+#: public/views/orders-app.php:57
+msgid "From date"
+msgstr ""
+
+#: public/views/orders-app.php:61
+msgid "To date"
+msgstr ""
+
+#: public/views/orders-app.php:65
+msgid "Sort by"
+msgstr ""
+
+#: public/views/orders-app.php:67
+msgid "Newest first"
+msgstr ""
+
+#: public/views/orders-app.php:68
+msgid "Oldest first"
+msgstr ""
+
+#: public/views/orders-app.php:72
+msgid "Total (highest first)"
+msgstr ""
+
+#: public/views/orders-app.php:76
+msgid "Apply filters"
+msgstr ""
+
+#: public/views/orders-app.php:77
+msgid "Reset"
+msgstr ""
+
+#: public/views/orders-app.php:85
+msgid "Literature orders"
+msgstr ""
+
+#: public/views/orders-app.php:107
+msgid "Order details"
+msgstr ""
+
+#: public/views/orders.php:14
+msgid "The order history requires JavaScript. You can also use Literature → Orders in the WordPress dashboard."
+msgstr ""
+
+#. translators: %s: order number.
+#: public/views/print-order.php:29
+#: public/views/print-order.php:52
+#, php-format
+msgid "Literature Order %s"
+msgstr ""
+
+#: public/views/print-order.php:50
+msgid "Print"
+msgstr ""
+
+#. translators: %s: turnaround.
+#: public/views/print-order.php:61
+#, php-format
+msgid "Special-order literature may take %s to order and stock before delivery."
+msgstr ""
+
+#: public/views/print-order.php:74
+msgid "Telephone"
+msgstr ""
+
+#. translators: 1: stock qty, 2: special qty.
+#: public/views/print-order.php:101
+#, php-format
+msgid "SPECIAL ORDER: %2$d (from stock: %1$d)"
+msgstr ""
+
+#: public/views/print-order.php:119
+msgid "Received by:"
+msgstr ""
+
+#: public/views/print-order.php:119
+msgid "Date:"
+msgstr ""
+
+#: public/views/review.php:42
+msgid "Review your order"
+msgstr ""
+
+#: public/views/review.php:43
+msgid "Please check everything below. Your order has not been sent yet."
+msgstr ""
+
+#: public/views/review.php:47
+msgid "Your order changed since it was last reviewed (quantities, prices or availability). Please check the updated totals below, then submit."
+msgstr ""
+
+#. translators: %s: turnaround, e.g. approximately one month.
+#: public/views/review.php:57
+#, php-format
+msgid "Special-order items are listed last and may require %s to obtain and stock before delivery."
+msgstr ""
+
+#: public/views/review.php:77
+msgid "Literature in this order"
+msgstr ""
+
+#. translators: 1: special qty, 2: total qty.
+#: public/views/review.php:104
+#, php-format
+msgid "%1$d of %2$d"
+msgstr ""
+
+#: public/views/review.php:120
+msgid "↻ Update totals"
+msgstr ""
+
+#: public/views/review.php:121
+msgid "Change a quantity (0 removes the item), then update the totals."
+msgstr ""
+
+#: public/views/review.php:123
+msgid "Quantities changed — select “Update totals” to see the new total before submitting."
+msgstr ""
+
+#: public/views/review.php:154
+msgid "← Edit order"
+msgstr ""
+
+#: public/views/review.php:155
+msgid "Submit order"
 msgstr ""

@@ -1,6 +1,6 @@
 # BMLT Literature Manager — Administrator Guide
 
-_Version 6.2.0_
+_Version 6.3.0_
 
 This guide walks through setting up and running the plugin. Menu locations refer to the **Literature** menu in the WordPress dashboard.
 
@@ -24,7 +24,7 @@ Safety features:
 
 - Data files end in `.json.php` and start with `<?php exit; ?>`, so they show nothing if someone requests them in a browser. `.htaccess`, `web.config` and `index.php` guards are added as well.
 - Every save takes an exclusive lock and replaces files atomically, so simultaneous orders cannot corrupt data or oversell stock. If your host uses a network filesystem that does not support file locks, add `define( 'BMLT_LIT_LOCK_METHOD', 'mkdir' );`.
-- Each file keeps its previous version as `.bak`; damaged files are never silently overwritten. Snapshots are saved in `backups/` before restores, migrations and repairs.
+- Each file keeps its previous version as `<name>.bak.json.php`; damaged files are never silently overwritten. Snapshots are saved in `backups/` before restores, migrations and repairs.
 - The data remembers which site URL created it. If production opens data created by staging (or the other way round), administrators see a warning on every Literature screen until it is fixed or confirmed on **Tools / Status**.
 
 To copy something from staging to production **on purpose**, export the catalog JSON (Import / Export) or download a full backup (Tools / Status) on staging, then import/restore it on production. Restores show a summary and require typing RESTORE; production's own SMTP password is kept.

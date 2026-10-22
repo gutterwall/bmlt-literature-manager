@@ -1,3 +1,3 @@
 <?php
-// BMLT Literature Manager 6.2.0
+// BMLT Literature Manager 6.3.0
 // Silence is golden.

@@ -2,9 +2,9 @@
 Contributors: bmltliteraturemanager
 Tags: narcotics anonymous, bmlt, literature, inventory, orders
 Requires at least: 5.9
-Tested up to: 6.6
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 6.2.0
+Stable tag: 6.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,7 +47,7 @@ Since version 2.0 all plugin data — catalog, inventory, orders, order history,
 * Recommended: put it outside the WordPress directory on each server, so file pushes cannot overwrite it either. Add to wp-config.php on each server: `define( 'BMLT_LIT_DATA_DIR', '/home/account/bmlt-literature-data' );`
 * Never point staging and production at the same directory. If production finds data created by another site URL, administrators see a warning.
 * Files are named `*.json.php` and begin with `<?php exit; ?>`, so they cannot be read over the web even if the folder is reachable. `.htaccess`, `web.config` and `index.php` guards are added too.
-* Writes are locked and atomic; each file keeps its previous version as `.bak`, and snapshots are taken before restores, migrations and repairs.
+* Writes are locked and atomic; each file keeps its previous version as `<name>.bak.json.php`, and snapshots are taken before restores, migrations and repairs.
 * On network filesystems without `flock`, add `define( 'BMLT_LIT_LOCK_METHOD', 'mkdir' );`.
 * Tools / Status provides full JSON backup download and validated restore (useful for deliberately copying a catalog from staging to production).
 * Upgrading from 1.0 copies all database data into JSON automatically. The old tables are left untouched until you remove them from Tools / Status.
@@ -125,6 +125,13 @@ Exclude the order page from full-page caching so that each visitor gets a fresh 
 * `bmlt_lit_order_form_captcha` (action) and `bmlt_lit_validate_captcha` (filter, $valid, $post).
 
 == Changelog ==
+
+= 6.3.0 =
+* Security: previous versions of data files are now saved as *.bak.json.php instead of *.json.php.bak, which nginx served as plain text (order details). Existing files are renamed automatically.
+* Privacy: erasing a requester's data also removes it from previous-version copies and backup snapshots.
+* Fix: with a page cache, a second visitor's order could be discarded and the first visitor's confirmation shown. Duplicates are now recognised by content, and order-form pages are marked not to be cached.
+* Fix: uninstalling on a multisite network no longer deletes other sites' data when the main site opted in.
+* Fix: import preview counts items with nested fields as invalid; backup restore drops negative Area ids; clearer message for a refused Root Server URL.
 
 = 6.2.0 =
 * Review page: quantities are editable, with an Update totals button (or Enter) that re-prices the order on the server; 0 removes an item, and a notice appears until totals are updated.

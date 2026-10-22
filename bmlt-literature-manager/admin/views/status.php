@@ -3,7 +3,7 @@
  * Tools / Status view. Never displays secrets.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  *
  * @var array      $bmlt
  * @var array      $bmlt_state

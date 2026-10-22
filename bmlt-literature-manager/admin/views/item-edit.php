@@ -3,7 +3,7 @@
  * Item create/edit view.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  *
  * @var object|null $item
  * @var string[]    $categories

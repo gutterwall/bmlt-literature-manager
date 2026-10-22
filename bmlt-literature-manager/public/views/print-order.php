@@ -3,7 +3,7 @@
  * Printer-friendly order detail (standalone page, no theme chrome).
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  *
  * @var object   $order
  * @var object[] $items

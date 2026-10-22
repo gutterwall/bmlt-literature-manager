@@ -3,7 +3,7 @@
  * Settings view (tabs).
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  *
  * @var array  $tabs
  * @var string $tab

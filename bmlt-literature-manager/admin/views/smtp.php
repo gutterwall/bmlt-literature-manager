@@ -3,7 +3,7 @@
  * SMTP view. The stored password is never output.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  *
  * @var array  $opts
  * @var string $pw_source

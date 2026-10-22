@@ -2,7 +2,7 @@
 
 A WordPress plugin for Narcotics Anonymous service bodies to take literature orders from groups, track inventory separately for each Area, flag special orders, and route orders to each Area's literature workers. Meetings and Areas come from your BMLT Root Server.
 
-- **Version:** 6.2.0
+- **Version:** 6.3.0
 - **Requires:** WordPress 5.9+, PHP 7.4+
 - **License:** GPL-2.0-or-later
 
@@ -78,7 +78,7 @@ Protection built in:
 
 - **Not readable from the web:** files are named `*.json.php` and start with `<?php exit; ?>`, so they show nothing if requested in a browser. `.htaccess`, `web.config` and `index.php` guards are added too.
 - **Safe concurrent saves:** every save takes an exclusive lock and replaces files in one step, so two simultaneous orders can't both take the last copy.
-- **Recovery:** each file keeps its previous version as `.bak`, and snapshots are saved automatically before restores, migrations and repairs.
+- **Recovery:** each file keeps its previous version (as `<name>.bak.json.php`, so it is just as unreadable from the web), and snapshots are saved automatically before restores, migrations and repairs.
 
 ---
 
@@ -88,7 +88,7 @@ Protection built in:
 
 **Literature → BMLT / Areas**
 
-1. Enter your **Root Server URL**, for example `https://bmlt.example.org/main_server`. Don't include `/client_interface/...`; the plugin adds the standard JSON path itself.
+1. Enter your **Root Server URL**, for example `https://bmlt.example.org/main_server`. Don't include `/client_interface/...`; the plugin adds the standard JSON path itself. The address must be a server on the internet on port 80, 443 or 8080 (WordPress's protection against requests to internal addresses). A Root Server on a private network or another port can be allowed with WordPress's `http_request_host_is_external` and `http_allowed_safe_ports` filters.
 2. Adjust **timeout**, **cache duration** and **automatic refresh** if needed. The defaults are 20 seconds, 6 hours and 12 hours.
 3. Click **Save BMLT settings**, then **Test BMLT Connection**. You'll see the server version and how many service bodies and meetings were found.
 
@@ -136,7 +136,7 @@ Set the sender name and address under **Settings → Email**. If your host's mai
 | Literature Workers | `[bmlt_literature_manager]` | Login required |
 | Order History (optional) | `[bmlt_literature_orders]` | Login required |
 
-Exclude the public order page from any page-caching plugin so each visitor gets a fresh security token.
+The plugin tells caching plugins (`DONOTCACHEPAGE`) and browsers not to cache pages with the order form, so each visitor gets a fresh security token. If your host caches pages at the server regardless, exclude the order page there.
 
 ---
 
@@ -359,7 +359,7 @@ Each item has an item number (SKU), title, category, price, short and long descr
 
 ### Starter catalog
 
-The plugin includes `sample-data/naws-catalog-2026.json`: 177 English items from the NA World Services 2026 price sheet, at single-copy US dollar NAWS prices.
+The plugin includes `sample-data/naws-catalog-2026.json`: 294 English items from the NA World Services 2026 price sheet (174 items plus 3 × 40 medallions), at single-copy US dollar NAWS prices.
 
 - 17 items whose prices couldn't be confirmed are imported **inactive**. Check their prices and activate them.
 - Medallions are one item per year from 1 to 40 years for each type, in three groups (tabs): **Bronze Medallions** (`BRZ-01`…`BRZ-40`), **Laser-etched Medallions** (NAWS numbers `7501`…`7540`) and **Triplate Medallions** (`TRI-01`…`TRI-40`, color stated in the order notes). Bronze and triplate use local item numbers because NAWS's numbering for them couldn't be confirmed.

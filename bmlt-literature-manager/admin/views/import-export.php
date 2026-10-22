@@ -3,7 +3,7 @@
  * Import / Export view.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  *
  * @var array|null $preview
  * @var string     $token

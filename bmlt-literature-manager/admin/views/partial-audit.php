@@ -3,7 +3,7 @@
  * Inventory audit table partial. Expects $adjusts (audit rows) or $history.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  */
 
 use BMLT_Lit\Audit;

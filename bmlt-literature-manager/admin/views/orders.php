@@ -3,7 +3,7 @@
  * Orders list view.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  *
  * @var \BMLT_Lit\Admin\Orders_List_Table $table
  */

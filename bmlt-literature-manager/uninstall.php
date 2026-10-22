@@ -6,7 +6,7 @@
  * (Literature → Settings → Advanced). Otherwise the JSON data directory is left untouched.
  *
  * @package BMLT_Lit
- * @version 6.2.0
+ * @version 6.3.0
  */
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
