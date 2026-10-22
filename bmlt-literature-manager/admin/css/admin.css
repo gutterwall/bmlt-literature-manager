@@ -1,0 +1,257 @@
+/*
+ * BMLT Literature Manager — admin styles (scoped to .bmlt-lit-admin).
+ * @version 6.2.0
+ */
+
+.bmlt-lit-admin .bmlt-lit-inline-form {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 8px 8px 12px 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap: 12px;
+	margin: 16px 0 24px;
+	padding: 0;
+	list-style: none;
+}
+
+.bmlt-lit-admin .bmlt-lit-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #1b5a78;
+	padding: 12px 14px;
+	margin: 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-card__num {
+	display: block;
+	font-size: 28px;
+	line-height: 1.1;
+	font-weight: 600;
+}
+
+.bmlt-lit-admin .bmlt-lit-columns {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	align-items: flex-start;
+}
+
+.bmlt-lit-admin .bmlt-lit-col {
+	flex: 1 1 340px;
+	min-width: 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-col--wide {
+	flex: 2 1 520px;
+}
+
+.bmlt-lit-admin .bmlt-lit-box .hndle {
+	padding: 10px 14px;
+	margin: 0;
+	font-size: 14px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.bmlt-lit-admin .bmlt-lit-box .inside {
+	padding: 4px 14px 14px;
+}
+
+.bmlt-lit-admin .bmlt-lit-table-scroll {
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.bmlt-lit-admin tr.bmlt-lit-row--special td,
+.bmlt-lit-admin tr.bmlt-lit-row--special th {
+	background: #fcf0f1 !important;
+}
+
+.bmlt-lit-admin tr.bmlt-lit-row--low td {
+	background: #fcf9e8 !important;
+}
+
+.bmlt-lit-admin tr.bmlt-lit-row--inactive td {
+	color: #646970;
+}
+
+.bmlt-lit-admin .bmlt-lit-special-box {
+	border: 3px solid #b32d2e;
+	background: #fcf0f1;
+	padding: 8px 14px;
+	margin: 12px 0 16px;
+}
+
+.bmlt-lit-admin .bmlt-lit-special-box p {
+	margin: 4px 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-delivery-note {
+	background: #edfaef;
+	border-left: 4px solid #00a32a;
+	padding: 8px 12px;
+}
+
+.bmlt-lit-admin .bmlt-lit-stock {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 1px 8px;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	font-weight: 600;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.bmlt-lit-admin .bmlt-lit-stock__extra {
+	font-weight: 400;
+}
+
+.bmlt-lit-admin .bmlt-lit-stock--in_stock { color: #1e6b34; background: #edfaef; }
+.bmlt-lit-admin .bmlt-lit-stock--low_stock { color: #7a4f00; background: #fcf9e8; }
+.bmlt-lit-admin .bmlt-lit-stock--special_order,
+.bmlt-lit-admin .bmlt-lit-stock--partial { color: #9b1c1c; background: #fcf0f1; }
+.bmlt-lit-admin .bmlt-lit-stock--inactive { color: #50575e; background: #f0f0f1; }
+
+.bmlt-lit-admin .bmlt-lit-status {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 3px;
+	background: #f0f0f1;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.bmlt-lit-admin .bmlt-lit-status--new { background: #e5f0f8; }
+.bmlt-lit-admin .bmlt-lit-status--waiting_special { background: #fcf0f1; }
+.bmlt-lit-admin .bmlt-lit-status--ready { background: #fcf9e8; }
+.bmlt-lit-admin .bmlt-lit-status--fulfilled { background: #edfaef; }
+.bmlt-lit-admin .bmlt-lit-status--cancelled { text-decoration: line-through; }
+
+.bmlt-lit-admin .bmlt-lit-history {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.bmlt-lit-admin .bmlt-lit-history li {
+	border-left: 3px solid #c3c4c7;
+	background: #fff;
+	padding: 6px 10px;
+	margin: 0 0 6px;
+}
+
+.bmlt-lit-admin .bmlt-lit-history--status { border-left-color: #2271b1 !important; }
+.bmlt-lit-admin .bmlt-lit-history--email { border-left-color: #00a32a !important; }
+
+.bmlt-lit-admin .bmlt-lit-history__meta {
+	display: block;
+	color: #646970;
+	font-size: 12px;
+}
+
+.bmlt-lit-admin .bmlt-lit-button-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.bmlt-lit-admin .bmlt-lit-button-stack .button {
+	text-align: left;
+}
+
+.bmlt-lit-admin .button.bmlt-lit-danger {
+	color: #b32d2e;
+	border-color: #b32d2e;
+}
+
+.bmlt-lit-admin .bmlt-lit-right {
+	text-align: right;
+}
+
+.bmlt-lit-admin .bmlt-lit-kv th {
+	width: 170px;
+	padding: 8px 10px 8px 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-kv td {
+	padding: 8px 10px;
+}
+
+.bmlt-lit-admin .bmlt-lit-stepper {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.bmlt-lit-admin .bmlt-lit-stepper .button {
+	min-width: 30px;
+	padding: 0 6px;
+}
+
+.bmlt-lit-admin .bmlt-lit-inv-admin .small-text {
+	width: 70px;
+}
+
+.bmlt-lit-admin .bmlt-lit-notes {
+	width: 160px;
+}
+
+.bmlt-lit-admin .bmlt-lit-sb-list {
+	max-height: 460px;
+	overflow-y: auto;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+	padding: 8px 12px;
+}
+
+.bmlt-lit-admin .bmlt-lit-sb {
+	display: block;
+	padding: 3px 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-test {
+	margin: 8px 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-test-result .notice p {
+	margin: 4px 0;
+}
+
+.bmlt-lit-admin .bmlt-lit-status-table th {
+	width: 240px;
+	font-weight: 600;
+}
+
+.bmlt-lit-admin .bmlt-lit-nowrap {
+	white-space: nowrap;
+}
+
+.bmlt-lit-admin .bmlt-lit-filterbar label {
+	margin-left: 4px;
+}
+
+.bmlt-lit-admin .bmlt-lit-placeholders {
+	margin: 0 0 16px;
+}
+
+.bmlt-lit-admin .bmlt-lit-placeholders summary {
+	cursor: pointer;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+@media (max-width: 782px) {
+	.bmlt-lit-admin .bmlt-lit-kv th {
+		width: auto;
+	}
+	.bmlt-lit-admin .bmlt-lit-filterbar input[type="date"] {
+		max-width: 150px;
+	}
+}
