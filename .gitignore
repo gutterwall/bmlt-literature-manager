@@ -3,3 +3,4 @@
 /.cache/
 /tmp/
 .phpunit.result.cache
+__pycache__/
