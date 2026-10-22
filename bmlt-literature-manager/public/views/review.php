@@ -3,7 +3,7 @@
  * Order review step: server-priced summary with Edit / Submit.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  *
  * @var array  $valid       Validated submission (area_id, meeting, contact fields, lines, _areas).
  * @var array  $preview     Server preview (items, subtotal, total, item_count, has_special).

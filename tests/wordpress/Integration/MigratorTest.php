@@ -1,7 +1,8 @@
 <?php
 /**
- * Upgrading from version 1.0, which kept everything in database tables and options: the data is copied into the
- * JSON store, sanitized, and the tables are left untouched.
+ * Upgrading from earlier versions: the JSON data folder of versions 2 to 6, and the database tables and options of
+ * version 1.0. The data is copied into the plugin's tables in one transaction, sanitized, and the old data is left
+ * untouched.
  */
 
 namespace BmltLitTest;
@@ -26,14 +27,12 @@ class MigratorTest extends TestCase {
 		delete_option( 'bmlt_lit_bmlt' );
 		delete_option( 'bmlt_lit_areas' );
 		delete_user_meta( self::$restricted, Permissions::AREA_META );
-		// CREATE and DROP TABLE commit the test's transaction: remove what this test left behind (rate-limit counters ...).
-		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_%bmlt\\_lit\\_%'" ); // phpcs:ignore WordPress.DB
-		$wpdb->query( 'COMMIT' ); // Otherwise the test's rollback would undo this cleanup.
-		wp_cache_flush();
+		// CREATE and DROP TABLE commit the test's transaction: remove what this test left behind.
+		self::reset_committed_data();
 		parent::tear_down();
 	}
 
-	public function test_version_1_database_data_is_copied_into_the_json_store() {
+	public function test_version_1_database_data_is_copied_into_the_tables() {
 		global $wpdb;
 		// Real tables (the test suite would otherwise make temporary ones, which SHOW TABLES does not list).
 		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
@@ -75,7 +74,7 @@ class MigratorTest extends TestCase {
 		$this->assertNull( Orders::get_by_access( 'LIT-2025-000041', str_repeat( 'k', 32 ) ), 'old confirmation links have expired' );
 		$this->assertSame( array( 101 ), Permissions::grants_for( self::$restricted )['areas'] );
 		$this->assertTrue( Catalog::is_referenced( 7 ) );
-		$this->assertNotEmpty( glob( $this->dir . '/backups/*-pre-migration' ), 'the JSON data that existed was saved first' );
+		$this->assertNotEmpty( Settings::meta()['migrated_from_db'] );
 		$this->assertSame( '1', $wpdb->get_var( "SELECT COUNT(*) FROM {$p}orders" ), 'the tables are left untouched' ); // phpcs:ignore WordPress.DB
 
 		// New orders continue after the migrated numbers.
@@ -84,5 +83,169 @@ class MigratorTest extends TestCase {
 
 		$this->assertTrue( Migrator::drop_legacy() );
 		$this->assertFalse( Migrator::legacy_leftovers() );
+	}
+
+	/* ------------------------------------------------------------------
+	 * The data folder of version 6.
+	 * ---------------------------------------------------------------- */
+
+	/**
+	 * Write this site's data as a version 6.3 data folder would hold it, then forget it in the database, the way a
+	 * site looks right after updating from 6.3 to 7.0.
+	 *
+	 * @return array The documents written.
+	 */
+	private function make_version_6_folder() {
+		wp_set_current_user( 0 );
+		$order = $this->place_order( $this->order_post( array( 'BT' => 2, 'KT-W' => 1 ), array( 'bmlt_lit_notes' => 'Side door' ) ) )['order'];
+		wp_set_current_user( self::$admin );
+		\BMLT_Lit\Orders::update_status( $order->id, 'ready', 'On the shelf' );
+		\BMLT_Lit\Smtp::save( array( 'enabled' => 1, 'host' => 'smtp.example.org', 'auth' => 1, 'username' => 'lit', 'password' => 'Folder-Pass-1', 'from_email' => 'lit@example.org' ) );
+		$docs                                = \BMLT_Lit\Import_Export::documents();
+		$docs['settings']['smtp']['password'] = Settings::smtp()['password'];
+		$docs['settings']['meta']            = array(
+			'schema'   => 3,
+			'site_url' => 'https://example.org/',
+			'created'  => 1700000000,
+			'store_id' => 'AbC123',
+		);
+		$docs['cache/bmlt'] = array();
+		foreach ( \BMLT_Lit\Bmlt_Client::cache_sections() as $section ) {
+			$docs['cache/bmlt'][ $section ] = get_option( \BMLT_Lit\Bmlt_Client::cache_option( $section ) );
+		}
+		// The order index of version 6 (rebuilt from the month files, never read by the move).
+		$docs['orders/index'] = array( 'next_id' => 2, 'orders' => array(), 'hashes' => array(), 'refs' => array() );
+		foreach ( $docs as $name => $doc ) {
+			if ( ! is_dir( dirname( $this->dir . '/' . $name ) ) ) {
+				mkdir( dirname( $this->dir . '/' . $name ), 0777, true );
+			}
+			file_put_contents( $this->dir . '/' . $name . '.json.php', "<?php exit; ?>\n" . wp_json_encode( $doc, JSON_PRETTY_PRINT ) );
+			file_put_contents( $this->dir . '/' . $name . '.bak.json.php', "<?php exit; ?>\n" . wp_json_encode( $doc ) );
+		}
+		$this->forget_database_data();
+		return $docs;
+	}
+
+	/**
+	 * Empty the plugin's tables and options (inside this test's transaction).
+	 */
+	private function forget_database_data() {
+		global $wpdb;
+		foreach ( \BMLT_Lit\Db::TABLES as $short ) {
+			if ( 'counters' !== $short ) {
+				$wpdb->query( 'DELETE FROM ' . \BMLT_Lit\Db::table( $short ) ); // phpcs:ignore WordPress.DB
+			}
+		}
+		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'bmlt\\_literature\\_%' AND option_name <> 'bmlt_literature_db_version'" ); // phpcs:ignore WordPress.DB
+		wp_cache_flush();
+		self::reset_plugin_state();
+		delete_transient( 'bmlt_lit_init_attempt' );
+		$this->assertFalse( Settings::initialized() );
+	}
+
+	/**
+	 * Checksums of every file in the folder.
+	 *
+	 * @return array
+	 */
+	private function folder_state() {
+		$out = array();
+		$it  = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $this->dir, \FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $it as $f ) {
+			$out[ substr( $f->getPathname(), strlen( $this->dir ) ) ] = md5_file( $f->getPathname() );
+		}
+		ksort( $out );
+		return $out;
+	}
+
+	public function test_version_6_data_folder_moves_into_the_database_unchanged() {
+		$docs   = $this->make_version_6_folder();
+		$before = $this->folder_state();
+
+		Migrator::maybe_initialize();
+		self::reset_plugin_state();
+		$this->assertTrue( Settings::initialized() );
+		$this->assertSame( '', Migrator::init_error() );
+
+		// Everything is there, as it was.
+		$now = \BMLT_Lit\Import_Export::documents();
+		foreach ( array( 'catalog', 'inventory', 'permissions' ) as $name ) {
+			$this->assertEquals( $docs[ $name ], $now[ $name ], $name );
+		}
+		$month = 'orders/' . gmdate( 'Y-m' );
+		$this->assertEquals( $docs[ $month ], $now[ $month ], 'orders with their lines and history' );
+		foreach ( array( 'general', 'bmlt', 'areas', 'templates' ) as $section ) {
+			$this->assertEquals( $docs['settings'][ $section ], Settings::raw( $section ), $section );
+		}
+		$this->assertSame( 'Folder-Pass-1', \BMLT_Lit\Smtp::password(), 'the saved SMTP password moves too' );
+		$this->assertCount( count( $docs[ 'audit/' . gmdate( 'Y-m' ) ]['entries'] ) + 1, $now[ 'audit/' . gmdate( 'Y-m' ) ]['entries'], 'plus one entry for the move' );
+		$meta = Settings::meta();
+		$this->assertSame( array( 'https://example.org/', 1700000000, 'AbC123', 4 ), array( $meta['site_url'], $meta['created'], $meta['store_id'], $meta['schema'] ) );
+		$this->assertNotEmpty( $meta['migrated_from_files'] );
+		$this->assertEquals( $docs['cache/bmlt']['meetings'], get_option( \BMLT_Lit\Bmlt_Client::cache_option( 'meetings' ) ), 'the last BMLT answers move too' );
+		$requests = count( self::$bmlt_requests );
+
+		// Ordering continues after the moved order numbers; the moved order still works.
+		$order = \BMLT_Lit\Orders::get( 1 );
+		$this->assertSame( 'ready', $order->status );
+		$this->assertTrue( \BMLT_Lit\Catalog::is_referenced( $this->items['BT'] ) );
+		$next = $this->place_order( $this->order_post( array( 'IP1' => 1 ) ) )['order'];
+		$this->assertSame( 2, (int) $next->id );
+		$this->assertCount( $requests, self::$bmlt_requests, 'from the moved cache, without asking BMLT' );
+
+		// The folder was not touched, and is only removed on request.
+		$this->assertSame( $before, $this->folder_state() );
+		Migrator::maybe_initialize();
+		$this->assertSame( 2, \BMLT_Lit\Orders::count_all(), 'moved once' );
+		$this->assertTrue( Migrator::remove_files() );
+		$this->assertDirectoryDoesNotExist( $this->dir );
+	}
+
+	public function test_a_damaged_file_is_read_from_its_previous_version() {
+		$this->make_version_6_folder();
+		file_put_contents( $this->dir . '/catalog.json.php', "<?php exit; ?>\n{\"items\": {\"1\": trunc" );
+		Migrator::maybe_initialize();
+		self::reset_plugin_state();
+		$this->assertTrue( Settings::initialized() );
+		$this->assertSame( 'BT', \BMLT_Lit\Catalog::get( $this->items['BT'] )->sku );
+	}
+
+	public function test_a_damaged_file_without_a_readable_copy_stops_the_move_and_changes_nothing() {
+		$this->make_version_6_folder();
+		file_put_contents( $this->dir . '/inventory.json.php', "<?php exit; ?>\nnot json" );
+		unlink( $this->dir . '/inventory.bak.json.php' );
+		$before = self::everything_stored();
+		$files  = $this->folder_state();
+
+		Migrator::maybe_initialize();
+		self::reset_plugin_state();
+		$this->assertFalse( Settings::initialized() );
+		$this->assertStringContainsString( 'The data file "inventory.json.php" is damaged', Migrator::init_error() );
+		$this->assertSame( $before, self::everything_stored(), 'nothing was written' );
+		$this->assertSame( $files, $this->folder_state() );
+
+		// Restoring the file lets the next attempt succeed.
+		file_put_contents( $this->dir . '/inventory.json.php', "<?php exit; ?>\n{\"areas\": {}}" );
+		delete_transient( 'bmlt_lit_init_attempt' );
+		Migrator::maybe_initialize();
+		$this->assertTrue( Settings::initialized() );
+		$this->assertSame( '', Migrator::init_error() );
+	}
+
+	public function test_a_move_that_fails_half_way_leaves_nothing_behind() {
+		$this->make_version_6_folder();
+		$before = self::everything_stored();
+		// The orders are written after the settings, the catalog and the inventory: make the first order fail.
+		$fail = static function ( $sql ) {
+			return false !== strpos( $sql, 'INSERT INTO `' . \BMLT_Lit\Db::table( 'orders' ) . '`' ) ? 'SELECT broken FROM nowhere' : $sql;
+		};
+		add_filter( 'query', $fail );
+		$GLOBALS['wpdb']->suppress_errors( true );
+		Migrator::maybe_initialize();
+		remove_filter( 'query', $fail );
+		self::reset_plugin_state();
+		$this->assertFalse( Settings::initialized() );
+		$this->assertNotSame( '', Migrator::init_error() );
+		$this->assertSame( $before, self::everything_stored(), 'no settings, no catalog, no inventory: nothing' );
 	}
 }

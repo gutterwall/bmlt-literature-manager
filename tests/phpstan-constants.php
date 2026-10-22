@@ -10,4 +10,3 @@ define( 'BMLT_LIT_URL', 'https://example.org/' );
 define( 'BMLT_LIT_BASENAME', 'bmlt-literature-manager/bmlt-literature-manager.php' );
 define( 'BMLT_LIT_DATA_DIR', '' );
 define( 'BMLT_LIT_SMTP_PASSWORD', '' );
-define( 'BMLT_LIT_LOCK_METHOD', 'flock' );

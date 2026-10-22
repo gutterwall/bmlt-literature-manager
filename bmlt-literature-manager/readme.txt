@@ -4,7 +4,7 @@ Tags: narcotics anonymous, bmlt, literature, inventory, orders
 Requires at least: 5.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 6.3.0
+Stable tag: 7.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,12 +22,12 @@ BMLT Literature Manager lets an Area (or several Areas) take literature orders f
 * Literature workers manage orders, inventory and the catalog from protected pages or from the WordPress dashboard.
 * JSON import/export with validation and preview, a built-in SMTP option, an audit log, privacy exporter/eraser and a status page.
 
-All data (catalog, inventory, orders, history, settings) lives in JSON files in a protected data directory outside the WordPress database, so pushing a staging database to production never overwrites production orders.
+All data (catalog, inventory, orders, history, settings) lives in the WordPress database, in the plugin's own tables and options. Every change is one database transaction: it is saved completely or not at all.
 
 == Installation ==
 
 1. Upload the `bmlt-literature-manager` folder to `/wp-content/plugins/`, or upload the zip under Plugins → Add New → Upload Plugin.
-2. Optionally add `define( 'BMLT_LIT_DATA_DIR', '/path/outside/wordpress/bmlt-literature-data' );` to wp-config.php on each server (see Data storage), then activate the plugin. The data directory and roles are created automatically.
+2. Activate the plugin. Its database tables and roles are created automatically.
 3. Go to Literature → BMLT / Areas, enter your Root Server URL (for example `https://bmlt.example.org/main_server`), save, and click Test BMLT Connection.
 4. Tick the Areas this site serves and click Save selected Areas.
 5. Go to Literature → Settings → Area Configuration and enter literature-worker email addresses for each Area.
@@ -39,18 +39,19 @@ All data (catalog, inventory, orders, history, settings) lives in JSON files in 
 
 See `docs/ADMIN-GUIDE.md` for the full administrator guide.
 
-== Data storage (staging / production) ==
+== Data storage ==
 
-Since version 2.0 all plugin data — catalog, inventory, orders, order history, audit log, settings, Area email routing, SMTP settings, email templates and literature permissions — is stored in JSON files in a data directory, not in the WordPress database. Pushing a staging database to production therefore no longer overwrites production orders or inventory.
+Since version 7.0 all plugin data is stored in the WordPress database, the standard way for WordPress plugins:
 
-* Default location: `wp-content/bmlt-literature-data/`.
-* Recommended: put it outside the WordPress directory on each server, so file pushes cannot overwrite it either. Add to wp-config.php on each server: `define( 'BMLT_LIT_DATA_DIR', '/home/account/bmlt-literature-data' );`
-* Never point staging and production at the same directory. If production finds data created by another site URL, administrators see a warning.
-* Files are named `*.json.php` and begin with `<?php exit; ?>`, so they cannot be read over the web even if the folder is reachable. `.htaccess`, `web.config` and `index.php` guards are added too.
-* Writes are locked and atomic; each file keeps its previous version as `<name>.bak.json.php`, and snapshots are taken before restores, migrations and repairs.
-* On network filesystems without `flock`, add `define( 'BMLT_LIT_LOCK_METHOD', 'mkdir' );`.
-* Tools / Status provides full JSON backup download and validated restore (useful for deliberately copying a catalog from staging to production).
-* Upgrading from 1.0 copies all database data into JSON automatically. The old tables are left untouched until you remove them from Tools / Status.
+* Catalog, inventory, orders (with their lines and history), the audit log and literature permissions are in the plugin's own tables, `<prefix>bmlt_literature_*` (InnoDB), created and upgraded with WordPress's dbDelta(). Settings, Area email routing, SMTP settings, email templates and the BMLT cache are options named `bmlt_literature_*`.
+* Every change runs in a database transaction: an order, its lines, its history entry and the stock it reserves are saved together or not at all, and so are status changes, imports, restores and settings with their audit entry. When anything fails (a refused value, a database error, PHP stopping half-way), everything the change wrote is rolled back.
+* Changes wait for each other (up to 15 seconds), so two orders can never reserve the same stock.
+* Tools / Status shows the tables, checks that they support transactions (InnoDB), and Verify storage creates anything missing.
+* Tools / Status provides full JSON backup download and validated restore (useful for deliberately copying a catalog from staging to production). A restore is one transaction too.
+* Staging and production: pushing a staging database to production replaces production's literature data with staging's. Exclude the `bmlt_literature_*` tables and options from database pushes, or copy data on purpose with backup and restore. When the data was created under another site URL, administrators see a warning.
+* On a network, each site has its own tables; deleting a site deletes its tables.
+
+Upgrading from version 6 (JSON data folder) or 1.0 (database tables) moves the data into the new tables automatically, in one transaction, the first time WordPress loads after the update. The old data is left untouched: delete the version 6 data folder (it holds requesters' contact details) or the version 1.0 tables from Tools / Status once you have checked the data. A damaged file in the version 6 folder stops the move with an explanation, and nothing is changed.
 
 == Shortcodes ==
 
@@ -101,13 +102,13 @@ The last successfully cached Areas and meetings continue to be used, so ordering
 No. Data is only removed on uninstall, and only if "Delete plugin data when uninstalling" was turned on under Settings → Advanced.
 
 = Will pushing staging to production erase orders? =
-Not a database push — the plugin no longer stores data in the database. If your host also pushes files, keep the data directory outside the pushed folders (set BMLT_LIT_DATA_DIR) or exclude it from the push.
+A database push copies the plugin's tables and options like any other WordPress data. Exclude the `bmlt_literature_*` tables and options from the push (most hosts let you choose tables), or push nothing and copy a catalog or configuration with Tools / Status → backup and restore.
 
 = Can I copy my catalog from staging to production on purpose? =
 Yes: use Literature → Import / Export (catalog JSON) or Tools / Status → full backup and restore.
 
 = Can I keep the SMTP password out of the database? =
-Yes. Add `define( 'BMLT_LIT_SMTP_PASSWORD', 'your-password' );` to wp-config.php. When defined it is used instead of any stored value. A stored password is encrypted with the site's security keys, so it must be re-entered if the data directory is moved to a server with different keys.
+Yes. Add `define( 'BMLT_LIT_SMTP_PASSWORD', 'your-password' );` to wp-config.php. When defined it is used instead of any stored value. A stored password is encrypted with the site's security keys, so it must be re-entered if the database is moved to a server with different keys.
 
 = Can I add a CAPTCHA? =
 Yes. Render your widget with the `bmlt_lit_order_form_captcha` action and validate it with the `bmlt_lit_validate_captcha` filter (return true, or a WP_Error to block).
@@ -121,10 +122,17 @@ Exclude the order page from full-page caching so that each visitor gets a fresh 
 * `bmlt_lit_order_status_changed` (action, $order_id, $old_status, $new_status)
 * `bmlt_lit_worker_recipients` (filter, $recipients, $order)
 * `bmlt_lit_client_ip` (filter, $ip) — supply the real client IP behind a trusted proxy.
-* `bmlt_lit_data_dir` (filter, $dir) — change the data directory.
+* `bmlt_lit_data_dir` (filter, $dir) — where to look for the version 6 data folder when upgrading.
+* `bmlt_lit_lock_wait` (filter, $seconds) — how long a change waits for another one (default 15).
 * `bmlt_lit_order_form_captcha` (action) and `bmlt_lit_validate_captcha` (filter, $valid, $post).
 
 == Changelog ==
+
+= 7.0.0 =
+* Storage: all data moved from JSON files to the WordPress database — the plugin's own InnoDB tables (created with dbDelta) and options. Upgrading moves version 6 data automatically, in one transaction; the old folder is kept until you delete it from Tools / Status.
+* Every change is one database transaction, saved completely or rolled back: orders with their lines, history and stock; status changes; catalog and inventory imports (a failure half-way no longer leaves part of an import); backup restores; settings and permissions together with their audit entries. Any failed query aborts the change.
+* Network sites: deleting a site deletes its literature tables.
+* BMLT_LIT_DATA_DIR is now only used to find the version 6 data folder when upgrading; BMLT_LIT_LOCK_METHOD is no longer used. File snapshots and the order-index rebuild tool are gone (no longer needed): download a backup before restoring if you may want the current data back.
 
 = 6.3.0 =
 * Security: previous versions of data files are now saved as *.bak.json.php instead of *.json.php.bak, which nginx served as plain text (order details). Existing files are renamed automatically.

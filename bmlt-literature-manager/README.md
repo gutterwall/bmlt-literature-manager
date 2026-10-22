@@ -2,7 +2,7 @@
 
 A WordPress plugin for Narcotics Anonymous service bodies to take literature orders from groups, track inventory separately for each Area, flag special orders, and route orders to each Area's literature workers. Meetings and Areas come from your BMLT Root Server.
 
-- **Version:** 6.3.0
+- **Version:** 7.0.0
 - **Requires:** WordPress 5.9+, PHP 7.4+
 - **License:** GPL-2.0-or-later
 
@@ -52,33 +52,40 @@ Key behaviours:
 ## Installation
 
 1. In WordPress go to **Plugins → Add New → Upload Plugin**, choose `bmlt-literature-manager.zip`, and click **Install Now**.
-2. **Before activating on a live site**, decide where the data folder will live (see the next section). On each server, add the location to `wp-config.php`.
-3. Click **Activate**. The plugin creates its data folder and two user roles. Administrators automatically get every literature permission.
+2. Click **Activate**. The plugin creates its database tables and two user roles. Administrators automatically get every literature permission.
 
-Upgrading from 1.0? Upload the new version over the old one. All existing database data is copied into JSON storage automatically the first time 2.0 runs, and the old tables are left untouched.
+Upgrading from version 6 (or 2 to 5, which kept data in a JSON folder) or from 1.0? Upload the new version over the old one. The first time WordPress loads afterwards, all existing data is moved into the database automatically, in one transaction, and the old data is left untouched (see [Upgrading from version 6](#upgrading-from-version-6)).
 
 ---
 
 ## Where data is stored (staging and production)
 
-All plugin data is stored in **JSON files**, not the WordPress database. That covers the catalog, inventory, orders and their history, the audit log, settings, Area email routing, templates, SMTP settings and literature permissions. Pushing a staging **database** to production therefore cannot overwrite production orders.
+All plugin data is stored in the **WordPress database**, the standard way for WordPress plugins:
 
-Many hosts' "push to production" also copies **files**. To keep each environment's data safe, put the data folder **outside the WordPress directory on each server**. Add this line to `wp-config.php` above "That's all, stop editing":
+- **Tables** (`wp_bmlt_literature_*`, with your site's table prefix): the catalog (`items`), Area stock (`inventory`), orders (`orders`, with `order_items` and `order_notes` for their lines and history), the audit log (`audit`), literature permissions (`permissions`) and the order and item number sequences (`counters`). They are created and upgraded with WordPress's `dbDelta()` and use the InnoDB engine.
+- **Options** (`bmlt_literature_*`): settings, Area email routing, email templates, SMTP settings and the BMLT cache.
 
-```php
-define( 'BMLT_LIT_DATA_DIR', '/home/youraccount/bmlt-literature-data' );
-```
+**Every change is saved completely or not at all.** Each change runs in one database transaction:
 
-- Use a path the web server can write to.
-- If data already exists in the default folder (`wp-content/bmlt-literature-data`), move that folder to the new path *before* adding the line.
-- **Never point staging and production at the same folder.**
-- The data remembers which site URL created it. If production ever opens staging's data, administrators see a warning until it's fixed or confirmed on **Literature → Tools / Status**.
+- an order, its lines, its history entry and the stock it reserves;
+- a status change and the stock it deducts or releases;
+- a catalog or inventory import, however many rows it has;
+- a backup restore, and the move from an earlier version;
+- every settings or permissions change together with its audit-log entry.
 
-Protection built in:
+If anything fails — a refused value, a database error, PHP stopping half-way — everything the change wrote is rolled back and you see a message saying nothing was changed. Changes also wait for each other (up to 15 seconds), so two simultaneous orders can't both take the last copy.
 
-- **Not readable from the web:** files are named `*.json.php` and start with `<?php exit; ?>`, so they show nothing if requested in a browser. `.htaccess`, `web.config` and `index.php` guards are added too.
-- **Safe concurrent saves:** every save takes an exclusive lock and replaces files in one step, so two simultaneous orders can't both take the last copy.
-- **Recovery:** each file keeps its previous version (as `<name>.bak.json.php`, so it is just as unreadable from the web), and snapshots are saved automatically before restores, migrations and repairs.
+**Staging and production:** pushing a staging database to production replaces production's literature data with staging's, like any other WordPress data. Exclude the `bmlt_literature_*` tables and options from database pushes, or copy a catalog or configuration on purpose with **Tools / Status → Download full backup / Restore**. The data remembers which site URL created it: if production ever shows staging's data, administrators see a warning until it's fixed or confirmed on **Literature → Tools / Status**.
+
+On a network (multisite), each site has its own tables, and deleting a site deletes them.
+
+### Upgrading from version 6
+
+Versions 2 to 6 kept their data in JSON files (`wp-content/bmlt-literature-data`, or the folder set with `BMLT_LIT_DATA_DIR`). After updating to 7.0:
+
+- The first time WordPress loads, everything in the folder — catalog, stock, orders with their history, audit log, settings, SMTP password, permissions and the last BMLT answers — is copied into the database in one transaction.
+- A damaged file is read from its previous version (`.bak`). If neither can be read, the move stops, administrators see which file is damaged, and nothing is changed until it is restored.
+- The folder itself is never changed. It still holds requesters' names, emails and phone numbers, so once you have checked the orders, catalog and settings, delete it with **Tools / Status → Delete the old data folder**.
 
 ---
 
@@ -479,7 +486,7 @@ Administrators always have every capability.
 
 **Restrict to Areas:** tick one or more Areas to limit a user to those Areas' orders, inventory and catalogs. Leave everything unticked to allow every Area. Restricted users can't edit the shared catalog.
 
-Permissions set on the Permissions tab are stored in the data folder, so database pushes don't change them. Roles are WordPress user data and travel with the database. Only site administrators can change permissions.
+Permissions set on the Permissions tab are stored in the plugin's `permissions` table. Roles are WordPress user data. Only site administrators can change permissions.
 
 ---
 
@@ -516,14 +523,17 @@ Permissions set on the Permissions tab are stored in the data folder, so databas
 - **Download full backup:** one JSON file with the catalog, inventory, orders, history, settings and permissions. The SMTP password is never included.
 - **Restore from a full backup** (administrators only):
   - The file is validated and summarized first, and you must type **RESTORE** to confirm.
-  - Restoring replaces all current literature data. A snapshot of the current data is saved first, and this site's SMTP password is kept.
+  - Restoring replaces all current literature data in one transaction: if anything fails, nothing changes. This site's SMTP password is kept. Download a backup of the current data first if you may want it back.
   - Use this, or the catalog export, when you want to copy something from staging to production on purpose.
 - **Refresh BMLT Data:** fetches fresh Areas and meetings now.
 - **Clear and rebuild BMLT cache.**
-- **Verify storage and rebuild order index:** recreates folders and protection files and rebuilds the order index. Never removes data.
+- **Verify storage:** creates missing tables and columns and checks that every table supports transactions (InnoDB). Never removes data.
+- **Delete the old data folder:** shown after an upgrade from version 6, until the folder is gone.
 - **Re-run migration from version 1.0 / Delete old version 1.0 database tables:** shown only after an upgrade from 1.0.
 
-**Updating the plugin:** upload the new version over the old one. Data in the JSON folder is never touched by updates. Download a full backup before major updates.
+The status table shows the tables, their size, whether transactions are supported, and any database error.
+
+**Updating the plugin:** upload the new version over the old one. Table changes are applied automatically. Download a full backup before major updates.
 
 ---
 
@@ -531,11 +541,8 @@ Permissions set on the Permissions tab are stored in the data folder, so databas
 
 | Constant | Purpose |
 |---|---|
-| `BMLT_LIT_DATA_DIR` | Absolute path of the data folder. Strongly recommended, and different on each server |
 | `BMLT_LIT_SMTP_PASSWORD` | SMTP password; used instead of any stored value |
-| `BMLT_LIT_LOCK_METHOD` | Set to `'mkdir'` on network filesystems that don't support file locking |
-
-On multisite, each site in the network automatically gets its own subfolder.
+| `BMLT_LIT_DATA_DIR` | Only for upgrading: where version 6 kept its data folder, if it was not `wp-content/bmlt-literature-data` |
 
 ---
 
@@ -551,7 +558,8 @@ On multisite, each site in the network automatically gets its own subfolder.
 | `bmlt_lit_order_form_captcha` | action | — | Render a CAPTCHA widget in the order form |
 | `bmlt_lit_validate_captcha` | filter | `$valid, $post` | Return `true`, or a `WP_Error` to block the order |
 | `bmlt_lit_client_ip` | filter | `$ip` | Supply the real client IP behind a trusted proxy (used for rate limiting) |
-| `bmlt_lit_data_dir` | filter | `$dir` | Change the data folder |
+| `bmlt_lit_data_dir` | filter | `$dir` | Where to look for the version 6 data folder when upgrading |
+| `bmlt_lit_lock_wait` | filter | `$seconds` | How long a change waits for another one to finish (default 15) |
 
 CAPTCHA example:
 
@@ -631,9 +639,12 @@ The plugin is fully translatable (text domain `bmlt-literature-manager`).
 | "Your session expired" on the order form | The page is being cached. Exclude it from page caching |
 | Workers can't see a page or Area | Check their capabilities and Area restrictions under **Settings → Permissions** |
 | No emails arrive | Check the Area's worker emails, then **SMTP → Send Test Email**. The order's history shows whether each email was sent |
-| "Data directory is not writable" | Create the folder and give the web server write access, or set `BMLT_LIT_DATA_DIR` |
-| "Literature data belongs to another site" | Staging and production may be sharing or have copied the data folder. Give each its own folder, or confirm on **Tools / Status** |
-| "The literature data is busy" | Another save was in progress; try again. If it keeps happening on a network filesystem, set `BMLT_LIT_LOCK_METHOD` to `'mkdir'` |
+| "The literature database tables could not be created" | The database user needs the CREATE and ALTER privileges. Then run **Tools / Status → Verify storage** |
+| "Could not be saved because of a database error. Nothing was changed." | Try again; if it repeats, run **Tools / Status → Verify storage** and check the status table for database errors |
+| Tools / Status says transactions are NOT SAFE | A table does not use InnoDB. Convert it (`ALTER TABLE … ENGINE=InnoDB`) |
+| "The data file … is damaged" after updating from version 6 | Restore that file (or its `.bak` copy) in the old data folder and reload; nothing was changed in the meantime |
+| "Literature data belongs to another site" | The database may have been copied from staging. Restore production's backup, or confirm on **Tools / Status** |
+| "The literature data is busy" | Another save took longer than 15 seconds; try again |
 | SMTP password stopped working after a move | Stored passwords depend on each site's security keys. Re-enter it, or use `BMLT_LIT_SMTP_PASSWORD` |
 
 ---
@@ -641,4 +652,4 @@ The plugin is fully translatable (text domain `bmlt-literature-manager`).
 ## Uninstalling
 
 - **Deactivating** never deletes data.
-- **Deleting** the plugin removes data (the JSON data folder and any leftover 1.0 tables) **only if** **Settings → Advanced → Delete plugin data when uninstalling** was turned on. It's off by default.
+- **Deleting** the plugin removes data (its tables and options, a leftover version 6 data folder and any leftover 1.0 tables) **only if** **Settings → Advanced → Delete plugin data when uninstalling** was turned on. It's off by default.

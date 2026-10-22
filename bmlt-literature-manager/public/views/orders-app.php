@@ -3,7 +3,7 @@
  * Shared order-history application markup (used by both protected shortcodes).
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  *
  * @var array $config
  */

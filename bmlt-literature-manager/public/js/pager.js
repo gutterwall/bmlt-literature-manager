@@ -10,7 +10,7 @@
  *   var pager = window.bmltLitPager.create( { list: element, perPage: 20, storageKey: 'key',
  *       strings: {...}, onChange: function () { render(); } } );
  *   var visible = pager.slice( allMatchingItems );   // call from render()
- * @version 6.3.0
+ * @version 7.0.0
  */
 ( function () {
 	'use strict';

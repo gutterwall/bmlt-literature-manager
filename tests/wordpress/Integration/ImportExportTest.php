@@ -10,7 +10,6 @@ use BMLT_Lit\Import_Export;
 use BMLT_Lit\Inventory;
 use BMLT_Lit\Orders;
 use BMLT_Lit\Settings;
-use BMLT_Lit\Store;
 
 class ImportExportTest extends TestCase {
 
@@ -60,7 +59,7 @@ class ImportExportTest extends TestCase {
 	}
 
 	public function test_preview_reports_every_problem_and_changes_nothing() {
-		$before = file_get_contents( Store::path( 'catalog' ) );
+		$before = self::everything_stored();
 		$data   = array(
 			'format'  => 'bmlt-literature-manager',
 			'version' => 1,
@@ -79,7 +78,7 @@ class ImportExportTest extends TestCase {
 		$this->assertSame( array( 'new' => 1, 'update' => 1, 'unchanged' => 0, 'skip' => 0, 'invalid' => 6 ), $p['counts'] );
 		$this->assertCount( 6, $p['errors'] );
 		$this->assertSame( array( 'IP1', 'KT-W', 'JFT' ), wp_list_pluck( $p['missing'], 'sku' ), 'active shared items missing from the file' );
-		$this->assertSame( $before, file_get_contents( Store::path( 'catalog' ) ) );
+		$this->assertSame( $before, self::everything_stored() );
 
 		foreach ( array(
 			array( array( 'format' => 'other', 'version' => 1, 'items' => array() ), 'format' ),
@@ -147,7 +146,10 @@ class ImportExportTest extends TestCase {
 		$json   = Import_Export::to_json( $backup );
 		$this->assertStringNotContainsString( 'Secret-Pass-123', $json );
 		$this->assertSame( '', $backup['documents']['settings']['smtp']['password'] );
-		$this->assertArrayNotHasKey( Orders::INDEX, $backup['documents'] );
+		$month = 'orders/' . gmdate( 'Y-m' );
+		$this->assertSame( array( 'settings', 'catalog', 'inventory', 'permissions', $month, 'audit/' . gmdate( 'Y-m' ) ), array_keys( $backup['documents'] ), 'the documents of version 6 backups' );
+		$this->assertSame( array( 'BT' ), wp_list_pluck( $backup['documents'][ $month ]['orders'][ $order->id ]['items'], 'sku' ) );
+		$this->assertSame( array( 'system', 'email' ), wp_list_pluck( $backup['documents'][ $month ]['orders'][ $order->id ]['notes_log'], 'note_type' ) );
 
 		// Everything changes after the backup ...
 		Catalog::update( $this->items['BT'], array( 'price' => '1.00' ) );
@@ -163,8 +165,36 @@ class ImportExportTest extends TestCase {
 		$this->assertSame( 1, Orders::count_all() );
 		$this->assertSame( 'new', Orders::get( $order->id )->status );
 		$this->assertSame( 'Secret-Pass-123', \BMLT_Lit\Smtp::password() );
-		$this->assertNotEmpty( glob( $this->dir . '/backups/*-pre-restore' ), 'a snapshot was taken first' );
-		$this->assertSame( 1, Orders::rebuild_index()['orders'], 'the index matches the restored month files' );
+		$this->assertSame( array( 'BT' ), wp_list_pluck( Orders::get_items( $order->id ), 'sku' ) );
+		$this->assertNotEmpty( Orders::get_notes( $order->id ) );
+		$this->assertNotEmpty( \BMLT_Lit\Settings::meta()['restored_at'] );
+
+		// The order placed after the backup is gone, and its number is never handed out again.
+		$next = $this->place_order( $this->order_post( array( 'IP1' => 1 ) ) )['order'];
+		$this->assertSame( 3, (int) $next->id );
+	}
+
+	public function test_a_restore_that_fails_changes_nothing() {
+		wp_set_current_user( 0 );
+		$this->place_order( $this->order_post( array( 'BT' => 2 ) ) );
+		wp_set_current_user( self::$admin );
+		$valid  = Import_Export::validate_backup( Import_Export::export_backup() );
+		Catalog::update( $this->items['BT'], array( 'price' => '1.00' ) );
+		$before = self::everything_stored();
+
+		// The last write of the restore fails (the audit entries are written after everything else).
+		$fail = static function ( $sql ) {
+			return false !== strpos( $sql, 'INSERT INTO ' . \BMLT_Lit\Db::table( 'audit' ) ) ? 'SELECT broken FROM nowhere' : $sql;
+		};
+		add_filter( 'query', $fail );
+		$GLOBALS['wpdb']->suppress_errors( true );
+		$res = Import_Export::restore_backup( $valid );
+		remove_filter( 'query', $fail );
+		$this->assertWPError( $res );
+		$this->assertSame( 'bmlt_lit_storage', $res->get_error_code() );
+		self::reset_plugin_state();
+		$this->assertSame( $before, self::everything_stored(), 'settings, catalog, orders: all as before' );
+		$this->assertSame( '1.00', Catalog::get( $this->items['BT'] )->price );
 	}
 
 	public function test_restore_sanitizes_everything_in_the_file() {

@@ -3,7 +3,7 @@
  * WordPress admin controller.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit\Admin;
@@ -20,7 +20,8 @@ use BMLT_Lit\Orders;
 use BMLT_Lit\Permissions;
 use BMLT_Lit\Settings;
 use BMLT_Lit\Smtp;
-use BMLT_Lit\Store;
+use BMLT_Lit\Db;
+use BMLT_Lit\Legacy_Files;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -70,6 +71,7 @@ class Admin {
 			'restore_backup',
 			'migrate_db',
 			'drop_legacy',
+			'remove_files',
 			'adopt_site',
 		);
 		foreach ( $handlers as $h ) {
@@ -192,19 +194,19 @@ class Admin {
 		}
 		if ( current_user_can( Permissions::MANAGE_SETTINGS ) ) {
 			$status_url = admin_url( 'admin.php?page=bmlt-lit-status' );
-			if ( ! Store::exists( Settings::DOC ) ) {
-				$ready = Store::ensure_dir();
-				echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'BMLT Literature Manager cannot store data yet.', 'bmlt-literature-manager' ) . '</strong> ' . esc_html( is_wp_error( $ready ) ? $ready->get_error_message() : __( 'The data store is being initialized; reload this page.', 'bmlt-literature-manager' ) ) . '</p></div>';
+			if ( ! Settings::initialized() ) {
+				$why = Migrator::init_error();
+				echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'BMLT Literature Manager cannot store data yet.', 'bmlt-literature-manager' ) . '</strong> ' . esc_html( '' !== $why ? $why : __( 'The literature data is being set up; reload this page.', 'bmlt-literature-manager' ) ) . '</p></div>';
 			}
-			foreach ( Store::read_errors() as $bad ) {
-				/* translators: %s: file name. */
-				echo '<div class="notice notice-error"><p>' . esc_html( sprintf( __( 'Literature data file "%s" could not be read. Changes touching it are blocked until it is restored.', 'bmlt-literature-manager' ), $bad ) ) . ' <a href="' . esc_url( $status_url ) . '">' . esc_html__( 'Tools / Status', 'bmlt-literature-manager' ) . '</a></p></div>';
+			foreach ( Db::errors() as $bad ) {
+				/* translators: %s: database error. */
+				echo '<div class="notice notice-error"><p>' . esc_html( sprintf( __( 'Literature data could not be read from the database (%s).', 'bmlt-literature-manager' ), $bad ) ) . ' <a href="' . esc_url( $status_url ) . '">' . esc_html__( 'Tools / Status → Verify storage', 'bmlt-literature-manager' ) . '</a></p></div>';
 			}
 			$foreign = Settings::foreign_site();
 			if ( '' !== $foreign ) {
 				echo '<div class="notice notice-warning"><p><strong>' . esc_html__( 'Literature data belongs to another site.', 'bmlt-literature-manager' ) . '</strong> '
 					/* translators: 1: other site URL, 2: this site URL. */
-					. esc_html( sprintf( __( 'The JSON data directory was created by %1$s, but this site is %2$s. If staging and production share or copied this directory, orders may be going to the wrong place.', 'bmlt-literature-manager' ), $foreign, home_url( '/' ) ) )
+					. esc_html( sprintf( __( 'The literature data was created by %1$s, but this site is %2$s. If this database was copied from another site (for example staging pushed to production), orders and inventory may be the other site’s.', 'bmlt-literature-manager' ), $foreign, home_url( '/' ) ) )
 					. ' <a href="' . esc_url( $status_url ) . '">' . esc_html__( 'Review on Tools / Status', 'bmlt-literature-manager' ) . '</a></p></div>';
 			}
 			if ( empty( Settings::selected_areas() ) && ( empty( self::$hooks['bmlt'] ) || self::$hooks['bmlt'] !== $screen->id ) ) {
@@ -595,7 +597,8 @@ class Admin {
 				'orders'     => Orders::count_all(),
 				'smtp'       => Settings::smtp(),
 				'pw_source'  => Smtp::password_source(),
-				'health'     => Store::health(),
+				'health'     => Db::health(),
+				'files'      => Legacy_Files::info(),
 				'meta'       => Settings::meta(),
 				'foreign'    => Settings::foreign_site(),
 				'legacy'     => Migrator::legacy_leftovers(),
@@ -996,6 +999,10 @@ class Admin {
 		}
 		delete_transient( $key );
 		$summary = Import_Export::apply( $prev );
+		if ( is_wp_error( $summary ) ) {
+			Helpers::add_notice( __( 'The import failed and nothing was changed:', 'bmlt-literature-manager' ) . ' ' . $summary->get_error_message(), 'error' );
+			self::go( 'bmlt-lit-import' );
+		}
 		Helpers::add_notice(
 			sprintf(
 				/* translators: 1: created, 2: updated, 3: deactivated, 4: failed. */
@@ -1052,8 +1059,11 @@ class Admin {
 		$new['refresh_hours']     = max( 1, min( 168, absint( isset( $p['refresh_hours'] ) ? $p['refresh_hours'] : 12 ) ) );
 		$new['debug']             = ! empty( $p['debug'] ) ? 1 : 0;
 
-		Settings::update( Settings::BMLT, $new );
-		Audit::log( 'settings_changed', 'settings', 0, array( 'bmlt' => $old ), array( 'bmlt' => $new ) );
+		$saved = Settings::save( Settings::BMLT, $new, array( 'bmlt' => $old ), array( 'bmlt' => $new ) );
+		if ( is_wp_error( $saved ) ) {
+			Helpers::add_notice( $saved->get_error_message(), 'error' );
+			self::go( 'bmlt-lit-bmlt' );
+		}
 
 		if ( $old['root_url'] !== $new['root_url'] || $old['endpoint_override'] !== $new['endpoint_override'] ) {
 			Bmlt_Client::clear_cache();
@@ -1088,9 +1098,21 @@ class Admin {
 		$new = $old;
 
 		$new['selected_areas'] = $ids;
-		Settings::update( Settings::BMLT, $new );
-		Bmlt_Client::sync_area_metadata( $bodies );
-		Audit::log( 'settings_changed', 'settings', 0, array( 'selected_areas' => $old['selected_areas'] ), array( 'selected_areas' => $ids ) );
+		$saved = Db::tx(
+			static function () use ( $new, $bodies, $old, $ids ) {
+				$res = Settings::update( Settings::BMLT, $new );
+				if ( is_wp_error( $res ) ) {
+					return $res;
+				}
+				Bmlt_Client::sync_area_metadata( $bodies );
+				Audit::log( 'settings_changed', 'settings', 0, array( 'selected_areas' => $old['selected_areas'] ), array( 'selected_areas' => $ids ) );
+				return true;
+			}
+		);
+		if ( is_wp_error( $saved ) ) {
+			Helpers::add_notice( $saved->get_error_message(), 'error' );
+			self::go( 'bmlt-lit-bmlt' );
+		}
 
 		$refresh = Bmlt_Client::refresh_meetings();
 		if ( is_wp_error( $refresh ) ) {
@@ -1132,8 +1154,8 @@ class Admin {
 	 */
 	public static function handle_save_smtp() {
 		self::verify( Permissions::MANAGE_SETTINGS, 'bmlt_lit_save_smtp' );
-		Smtp::save( self::post() );
-		Helpers::add_notice( __( 'SMTP settings saved.', 'bmlt-literature-manager' ) );
+		$saved = Smtp::save( self::post() );
+		Helpers::add_notice( is_wp_error( $saved ) ? $saved->get_error_message() : __( 'SMTP settings saved.', 'bmlt-literature-manager' ), is_wp_error( $saved ) ? 'error' : 'success' );
 		self::go( 'bmlt-lit-smtp' );
 	}
 
@@ -1251,13 +1273,9 @@ class Admin {
 			$new['delete_data_on_uninstall'] = $chk( 'delete_data_on_uninstall' );
 		}
 
-		$res      = Settings::update( Settings::GENERAL, $new );
 		$diff_old = array_diff_assoc( array_map( 'strval', $old ), array_map( 'strval', $new ) );
 		$diff_new = array_intersect_key( $new, $diff_old );
-		if ( $diff_old && ! is_wp_error( $res ) ) {
-			Audit::log( 'settings_changed', 'settings', 0, $diff_old, $diff_new );
-		}
-		return $res;
+		return $diff_old ? Settings::save( Settings::GENERAL, $new, $diff_old, $diff_new ) : Settings::update( Settings::GENERAL, $new );
 	}
 
 	/**
@@ -1296,11 +1314,7 @@ class Admin {
 				)
 			);
 		}
-		$res = Settings::update( Settings::AREAS, $config );
-		if ( ! is_wp_error( $res ) ) {
-			Audit::log( 'settings_changed', 'settings', 0, null, array( 'areas_config' => array_keys( $config ) ) );
-		}
-		return $res;
+		return Settings::save( Settings::AREAS, $config, null, array( 'areas_config' => array_keys( $config ) ) );
 	}
 
 	/**
@@ -1326,11 +1340,7 @@ class Admin {
 				'body'    => Helpers::limit( $body, 50000 ),
 			);
 		}
-		$res = Settings::update( Settings::TEMPLATES, $saved );
-		if ( ! is_wp_error( $res ) ) {
-			Audit::log( 'settings_changed', 'settings', 0, null, array( 'templates' => array_keys( $saved ) ) );
-		}
-		return $res;
+		return Settings::save( Settings::TEMPLATES, $saved, null, array( 'templates' => array_keys( $saved ) ) );
 	}
 
 	/**
@@ -1384,9 +1394,15 @@ class Admin {
 			}
 			$set['caps']  = array_values( array_diff( $set['caps'], $from_roles ) );
 			$save[ $uid ] = $set;
-			Audit::log( 'permissions_changed', 'user', $uid, Permissions::grants_for( $uid ), $set );
 		}
-		$res = Permissions::save_grants( $save );
+		$res = Db::tx(
+			static function () use ( $save ) {
+				foreach ( $save as $uid => $set ) {
+					Audit::log( 'permissions_changed', 'user', $uid, Permissions::grants_for( $uid ), $set );
+				}
+				return Permissions::save_grants( $save );
+			}
+		);
 		if ( is_wp_error( $res ) ) {
 			Helpers::add_notice( $res->get_error_message(), 'error' );
 			self::go( 'bmlt-lit-settings', array( 'tab' => 'permissions' ) );
@@ -1411,24 +1427,24 @@ class Admin {
 	}
 
 	/**
-	 * Verify the data directory and rebuild the order index from the month files.
+	 * Verify storage: create missing tables and columns (dbDelta), the fixed rows and the roles. Never removes data.
 	 */
 	public static function handle_repair_store() {
 		self::verify( Permissions::MANAGE_SETTINGS, 'bmlt_lit_repair_store' );
-		$ready = Store::ensure_dir();
-		if ( is_wp_error( $ready ) ) {
-			Helpers::add_notice( $ready->get_error_message(), 'error' );
-			self::go( 'bmlt-lit-status' );
-		}
 		Permissions::install_roles();
-		Store::upgrade_layout();
-		Store::snapshot( 'pre-repair' );
-		$res = Orders::rebuild_index();
+		$res = Db::install();
 		if ( is_wp_error( $res ) ) {
 			Helpers::add_notice( $res->get_error_message(), 'error' );
+			self::go( 'bmlt-lit-status' );
+		}
+		delete_transient( 'bmlt_lit_init_attempt' );
+		Migrator::maybe_initialize();
+		$health = Db::health();
+		if ( $health['not_innodb'] ) {
+			/* translators: %s: tables. */
+			Helpers::add_notice( sprintf( __( 'Storage verified, but these tables do not use the InnoDB engine, so changes to them cannot be rolled back: %s. Convert them to InnoDB (ALTER TABLE … ENGINE=InnoDB).', 'bmlt-literature-manager' ), implode( ', ', $health['not_innodb'] ) ), 'warning' );
 		} else {
-			/* translators: 1: orders, 2: month files. */
-			Helpers::add_notice( sprintf( __( 'Storage verified. Order index rebuilt from %2$d month file(s): %1$d orders. No data was removed.', 'bmlt-literature-manager' ), $res['orders'], $res['months'] ) );
+			Helpers::add_notice( __( 'Storage verified: every table exists and uses InnoDB. No data was changed.', 'bmlt-literature-manager' ) );
 		}
 		self::go( 'bmlt-lit-status' );
 	}
@@ -1483,7 +1499,7 @@ class Admin {
 			}
 			delete_transient( $key );
 			$res = Import_Export::restore_backup( $pending );
-			Helpers::add_notice( is_wp_error( $res ) ? $res->get_error_message() : __( 'Backup restored. The previous data was saved as a snapshot in the backups folder.', 'bmlt-literature-manager' ), is_wp_error( $res ) ? 'error' : 'success' );
+			Helpers::add_notice( is_wp_error( $res ) ? $res->get_error_message() : __( 'Backup restored.', 'bmlt-literature-manager' ), is_wp_error( $res ) ? 'error' : 'success' );
 			self::go( 'bmlt-lit-status' );
 		}
 
@@ -1522,7 +1538,7 @@ class Admin {
 			Helpers::add_notice( $res->get_error_message(), 'error' );
 		} else {
 			/* translators: 1: items, 2: inventory rows, 3: orders, 4: audit entries, 5: users. */
-			Helpers::add_notice( sprintf( __( 'Migration complete: %1$d items, %2$d inventory records, %3$d orders, %4$d audit entries, %5$d user permission sets. The database tables were left untouched.', 'bmlt-literature-manager' ), $res['items'], $res['inventory'], $res['orders'], $res['audit'], $res['users'] ) );
+			Helpers::add_notice( sprintf( __( 'Migration complete: %1$d items, %2$d inventory records, %3$d orders, %4$d audit entries, %5$d user permission sets. The version 1.0 tables were left untouched.', 'bmlt-literature-manager' ), $res['items'], $res['inventory'], $res['orders'], $res['audit'], $res['users'] ) );
 		}
 		self::go( 'bmlt-lit-status' );
 	}
@@ -1538,7 +1554,17 @@ class Admin {
 	}
 
 	/**
-	 * Mark the data directory as belonging to this site.
+	 * Delete the version 6 data folder after its data was moved into the database.
+	 */
+	public static function handle_remove_files() {
+		self::verify( 'manage_options', 'bmlt_lit_remove_files' );
+		$res = Migrator::remove_files();
+		Helpers::add_notice( is_wp_error( $res ) ? $res->get_error_message() : __( 'The old data folder was removed.', 'bmlt-literature-manager' ), is_wp_error( $res ) ? 'error' : 'success' );
+		self::go( 'bmlt-lit-status' );
+	}
+
+	/**
+	 * Mark the literature data as belonging to this site.
 	 */
 	public static function handle_adopt_site() {
 		self::verify( 'manage_options', 'bmlt_lit_adopt_site' );

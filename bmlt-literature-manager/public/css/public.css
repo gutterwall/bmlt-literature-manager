@@ -2,7 +2,7 @@
  * BMLT Literature Manager — public styles.
  * Every selector is scoped under .bmlt-lit so themes and other plugins are not affected.
  * Typography is inherited from the theme on purpose.
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 .bmlt-lit {

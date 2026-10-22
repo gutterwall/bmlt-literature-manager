@@ -3,7 +3,7 @@
  * WordPress privacy tools integration.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -132,11 +132,17 @@ class Privacy {
 	 */
 	public static function erase( $email, $page = 1 ) {
 		unset( $page );
-		$count = Orders::anonymize_by_email( sanitize_email( $email ) );
+		$count    = Orders::anonymize_by_email( sanitize_email( $email ) );
+		$messages = $count > 0 ? array( __( 'Literature order contact details were anonymized; order items and totals were retained for literature accounting.', 'bmlt-literature-manager' ) ) : array();
+		$folder   = Legacy_Files::present();
+		if ( $folder ) {
+			/* translators: %s: folder. */
+			$messages[] = sprintf( __( 'The data folder of BMLT Literature Manager 6 still exists (%s) and may hold copies of this person’s orders. Delete it on Literature → Tools / Status once you have checked the data moved into the database.', 'bmlt-literature-manager' ), Legacy_Files::dir() );
+		}
 		return array(
 			'items_removed'  => $count > 0,
-			'items_retained' => $count > 0,
-			'messages'       => $count > 0 ? array( __( 'Literature order contact details were anonymized; order items and totals were retained for literature accounting.', 'bmlt-literature-manager' ) ) : array(),
+			'items_retained' => $count > 0 || $folder,
+			'messages'       => $messages,
 			'done'           => true,
 		);
 	}

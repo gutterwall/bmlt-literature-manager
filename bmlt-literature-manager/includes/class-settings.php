@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin-wide settings stored in the JSON data store (settings.json.php), not in wp_options,
- * so that database pushes between environments never overwrite them.
+ * Plugin-wide settings, stored as WordPress options (one per section, "bmlt_literature_<section>"), and the
+ * identity of the site's literature data ("bmlt_literature_store").
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -23,43 +23,71 @@ class Settings {
 	const TEMPLATES = 'templates';
 
 	/**
-	 * Store document holding all settings.
+	 * Name of the settings document in backups.
 	 */
 	const DOC = 'settings';
 
 	/**
-	 * Current storage schema version (3: previous versions are saved as *.bak.json.php, see Store).
+	 * Option holding the identity metadata; its presence means the site's literature data is initialized.
 	 */
-	const SCHEMA = 3;
+	const META_OPTION = 'bmlt_literature_store';
 
 	/**
-	 * Request-level cache.
+	 * Storage schema version (4: WordPress database tables; 3 and earlier: JSON files).
+	 */
+	const SCHEMA = 4;
+
+	/**
+	 * Sections loaded on every request (the others only when needed).
+	 */
+	const AUTOLOAD = array( self::GENERAL, self::BMLT, self::AREAS );
+
+	/**
+	 * Request-level cache: blog id => section => merged value.
 	 *
 	 * @var array
 	 */
 	private static $cache = array();
 
 	/**
+	 * Option name of a section.
+	 *
+	 * @param string $section Section key.
+	 * @return string
+	 */
+	public static function option( $section ) {
+		return 'bmlt_literature_' . sanitize_key( $section );
+	}
+
+	/**
+	 * Section keys.
+	 *
+	 * @return string[]
+	 */
+	public static function sections() {
+		return array( self::GENERAL, self::BMLT, self::AREAS, self::SMTP, self::TEMPLATES );
+	}
+
+	/**
 	 * Clear the request cache (after updates).
 	 */
 	public static function flush() {
 		self::$cache = array();
-		Store::flush_cache();
 	}
 
 	/**
-	 * Raw section from the settings document.
+	 * Raw saved section.
 	 *
 	 * @param string $section Section key.
 	 * @return array
 	 */
 	public static function raw( $section ) {
-		$doc = Store::get( self::DOC );
-		return ( isset( $doc[ $section ] ) && is_array( $doc[ $section ] ) ) ? $doc[ $section ] : array();
+		$v = Db::get_option( self::option( $section ), array() );
+		return is_array( $v ) ? $v : array();
 	}
 
 	/**
-	 * Replace a settings section (atomic, locked write).
+	 * Replace a settings section (part of the surrounding transaction, if any).
 	 *
 	 * @param string $section  Section key (GENERAL, BMLT, AREAS, SMTP, TEMPLATES).
 	 * @param array  $value    New value.
@@ -69,11 +97,13 @@ class Settings {
 	public static function update( $section, $value, $autoload = true ) {
 		unset( $autoload );
 		$section = sanitize_key( $section );
-		$result  = Store::tx(
+		if ( ! in_array( $section, self::sections(), true ) ) {
+			return new \WP_Error( 'bmlt_lit_settings', 'Unknown settings section.' );
+		}
+		$result = Db::tx(
 			static function () use ( $section, $value ) {
-				$doc             = self::with_meta( Store::get( self::DOC ) );
-				$doc[ $section ] = is_array( $value ) ? $value : array();
-				return Store::put( self::DOC, $doc );
+				Db::set_option( self::option( $section ), is_array( $value ) ? $value : array(), in_array( $section, self::AUTOLOAD, true ) );
+				return true;
 			}
 		);
 		self::flush();
@@ -84,17 +114,53 @@ class Settings {
 	}
 
 	/**
-	 * Ensure the settings document carries identity metadata.
+	 * Replace a settings section and record the change in the audit log, together (one transaction).
 	 *
-	 * @param array $doc Document.
+	 * @param string     $section Section key.
+	 * @param array      $value   New value.
+	 * @param mixed      $old_log Old value for the audit log.
+	 * @param mixed      $new_log New value for the audit log (no entry when both are null).
+	 * @return true|\WP_Error
+	 */
+	public static function save( $section, array $value, $old_log = null, $new_log = null ) {
+		$result = Db::tx(
+			static function () use ( $section, $value, $old_log, $new_log ) {
+				$saved = self::update( $section, $value );
+				if ( is_wp_error( $saved ) ) {
+					return $saved;
+				}
+				if ( null !== $old_log || null !== $new_log ) {
+					Audit::log( 'settings_changed', 'settings', 0, $old_log, $new_log );
+				}
+				return true;
+			}
+		);
+		self::flush();
+		return $result;
+	}
+
+	/**
+	 * Every section, as saved (for backups).
+	 *
+	 * @return array section => array
+	 */
+	public static function all_raw() {
+		$out = array();
+		foreach ( self::sections() as $section ) {
+			$out[ $section ] = self::raw( $section );
+		}
+		return $out;
+	}
+
+	/**
+	 * New identity metadata, or the given metadata completed.
+	 *
+	 * @param array $meta Existing metadata.
 	 * @return array
 	 */
-	public static function with_meta( array $doc ) {
-		if ( empty( $doc['meta'] ) || ! is_array( $doc['meta'] ) ) {
-			$doc['meta'] = array();
-		}
-		$doc['meta'] = wp_parse_args(
-			$doc['meta'],
+	public static function complete_meta( array $meta = array() ) {
+		return wp_parse_args(
+			$meta,
 			array(
 				'schema'   => self::SCHEMA,
 				'site_url' => home_url( '/' ),
@@ -102,21 +168,40 @@ class Settings {
 				'store_id' => wp_generate_password( 16, false, false ),
 			)
 		);
-		return $doc;
 	}
 
 	/**
-	 * Identity metadata of the data store.
+	 * Save the identity metadata (part of the surrounding transaction, if any).
+	 *
+	 * @param array $meta Metadata.
+	 * @throws Db_Error On failure inside a transaction.
+	 */
+	public static function save_meta( array $meta ) {
+		Db::set_option( self::META_OPTION, self::complete_meta( $meta ), true );
+		self::flush();
+	}
+
+	/**
+	 * Identity metadata of the literature data.
 	 *
 	 * @return array
 	 */
 	public static function meta() {
-		$doc = Store::get( self::DOC );
-		return ( isset( $doc['meta'] ) && is_array( $doc['meta'] ) ) ? $doc['meta'] : array();
+		$meta = Db::get_option( self::META_OPTION, array() );
+		return is_array( $meta ) ? $meta : array();
 	}
 
 	/**
-	 * Whether the data store was created by a different site URL (e.g. staging data on production).
+	 * Whether this site's literature data has been initialized (created, or migrated from an earlier version).
+	 *
+	 * @return bool
+	 */
+	public static function initialized() {
+		return array() !== self::meta();
+	}
+
+	/**
+	 * Whether the data was created by a different site URL (for example a database copied from staging).
 	 *
 	 * @return string The other site URL, or '' when it matches.
 	 */
@@ -132,17 +217,18 @@ class Settings {
 	}
 
 	/**
-	 * Mark the data store as belonging to this site.
+	 * Mark the data as belonging to this site.
 	 *
 	 * @return true|\WP_Error
 	 */
 	public static function adopt_site() {
-		$result = Store::tx(
+		$result = Db::tx(
 			static function () {
-				$doc                     = self::with_meta( Store::get( self::DOC ) );
-				$doc['meta']['site_url'] = home_url( '/' );
-				$doc['meta']['adopted']  = time();
-				return Store::put( self::DOC, $doc );
+				$meta             = self::meta();
+				$meta['site_url'] = home_url( '/' );
+				$meta['adopted']  = time();
+				self::save_meta( $meta );
+				return true;
 			}
 		);
 		self::flush();
@@ -157,10 +243,14 @@ class Settings {
 	 * @return array
 	 */
 	private static function merged( $section, array $defaults ) {
-		if ( ! isset( self::$cache[ $section ] ) ) {
-			self::$cache[ $section ] = wp_parse_args( self::raw( $section ), $defaults );
+		if ( Db::in_tx() ) {
+			return wp_parse_args( self::raw( $section ), $defaults ); // What this transaction sees.
 		}
-		return self::$cache[ $section ];
+		$blog = get_current_blog_id();
+		if ( ! isset( self::$cache[ $blog ][ $section ] ) ) {
+			self::$cache[ $blog ][ $section ] = wp_parse_args( self::raw( $section ), $defaults );
+		}
+		return self::$cache[ $blog ][ $section ];
 	}
 
 	/* ------------------------------------------------------------------

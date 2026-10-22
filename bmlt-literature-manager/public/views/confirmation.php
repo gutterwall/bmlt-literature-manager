@@ -3,7 +3,7 @@
  * Order confirmation view.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  *
  * @var object   $order
  * @var object[] $items

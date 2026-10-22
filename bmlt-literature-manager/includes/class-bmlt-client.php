@@ -3,7 +3,7 @@
  * BMLT Root Server client (Semantic / client_interface JSON API).
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -19,7 +19,6 @@ defined( 'ABSPATH' ) || exit;
 class Bmlt_Client {
 
 	const CRON_HOOK      = 'bmlt_lit_cron_refresh';
-	const CACHE_DOC      = 'cache/bmlt';
 	const CACHE_SB       = 'service_bodies';
 	const CACHE_MEETINGS = 'meetings';
 	const STATUS         = 'status';
@@ -32,31 +31,54 @@ class Bmlt_Client {
 	const MEETING_FIELDS = 'id_bigint,meeting_name,weekday_tinyint,start_time,service_body_bigint,location_municipality,location_province,location_neighborhood,location_text,location_street,published';
 
 	/**
-	 * Read one section of the BMLT cache document.
+	 * Read one section of the BMLT cache (a non-autoloaded option, "bmlt_literature_bmlt_<section>").
 	 *
 	 * @param string $key Section.
 	 * @return array
 	 */
 	private static function cache_get( $key ) {
-		$doc = Store::get( self::CACHE_DOC );
-		return ( isset( $doc[ $key ] ) && is_array( $doc[ $key ] ) ) ? $doc[ $key ] : array();
+		$v = get_option( self::cache_option( $key ), array() );
+		return is_array( $v ) ? $v : array();
 	}
 
 	/**
-	 * Write one section of the BMLT cache document.
+	 * Write one section of the BMLT cache.
 	 *
 	 * @param string $key   Section.
 	 * @param array  $value Value.
-	 * @return true|\WP_Error
+	 * @return true
 	 */
 	private static function cache_put( $key, array $value ) {
-		return Store::tx(
-			static function () use ( $key, $value ) {
-				$doc         = Store::get( self::CACHE_DOC );
-				$doc[ $key ] = $value;
-				return Store::put( self::CACHE_DOC, $doc );
-			}
-		);
+		update_option( self::cache_option( $key ), $value, false );
+		return true;
+	}
+
+	/**
+	 * Sections of the BMLT cache.
+	 *
+	 * @return string[]
+	 */
+	public static function cache_sections() {
+		return array( self::CACHE_SB, self::CACHE_MEETINGS, self::STATUS );
+	}
+
+	/**
+	 * Option holding one section of the BMLT cache.
+	 *
+	 * @param string $section Section.
+	 * @return string
+	 */
+	public static function cache_option( $section ) {
+		return 'bmlt_literature_bmlt_' . $section;
+	}
+
+	/**
+	 * Option names of the BMLT cache (uninstall).
+	 *
+	 * @return string[]
+	 */
+	public static function cache_options() {
+		return array_map( array( __CLASS__, 'cache_option' ), self::cache_sections() );
 	}
 
 	/**
@@ -663,13 +685,8 @@ class Bmlt_Client {
 	 * Clear all BMLT caches.
 	 */
 	public static function clear_cache() {
-		Store::tx(
-			static function () {
-				$doc = Store::get( self::CACHE_DOC );
-				unset( $doc[ self::CACHE_SB ], $doc[ self::CACHE_MEETINGS ] );
-				return Store::put( self::CACHE_DOC, $doc );
-			}
-		);
+		delete_option( self::cache_option( self::CACHE_SB ) );
+		delete_option( self::cache_option( self::CACHE_MEETINGS ) );
 		delete_transient( self::BACKOFF );
 		delete_transient( self::LOCK );
 	}

@@ -3,7 +3,7 @@
  * JSON import / export.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -402,6 +402,22 @@ class Import_Export {
 	 * @return array Summary counts.
 	 */
 	public static function apply( array $preview ) {
+		// One transaction: rows the checks refuse are counted as failed, but a system failure (a database error)
+		// leaves the catalog or inventory exactly as it was.
+		return Db::tx(
+			static function () use ( $preview ) {
+				return self::apply_rows( $preview );
+			}
+		);
+	}
+
+	/**
+	 * Apply a preview's rows (inside the transaction of apply()).
+	 *
+	 * @param array $preview Preview.
+	 * @return array Summary counts.
+	 */
+	private static function apply_rows( array $preview ) {
 		$summary = array(
 			'created'     => 0,
 			'updated'     => 0,
@@ -469,21 +485,61 @@ class Import_Export {
 	 * ---------------------------------------------------------------- */
 
 	/**
-	 * Build a full backup of every data document (the SMTP password is never included).
+	 * Every stored record as backup documents (the format of version 6, so backups move freely between 6.x and 7.x):
+	 * settings, catalog, inventory, permissions, orders/YYYY-MM and audit/YYYY-MM. The SMTP password is never
+	 * included.
+	 *
+	 * @return array name => document
+	 */
+	public static function documents() {
+		$settings         = Settings::all_raw();
+		$settings['meta'] = Settings::meta();
+		unset( $settings['smtp']['password'] );
+		$catalog = Catalog::doc();
+		$docs    = array(
+			Settings::DOC    => $settings,
+			Catalog::DOC     => array(
+				'next_id' => max( (int) $catalog['next_id'], $catalog['items'] ? max( array_keys( $catalog['items'] ) ) + 1 : 1 ),
+				'items'   => $catalog['items'],
+			),
+			Inventory::DOC   => Inventory::doc(),
+			Permissions::DOC => array( 'users' => Permissions::all_grants() ),
+		);
+		return $docs + Orders::export_documents() + self::audit_documents();
+	}
+
+	/**
+	 * Audit entries as backup documents ("audit/YYYY-MM" => { entries: [] }).
+	 *
+	 * @return array
+	 */
+	private static function audit_documents() {
+		global $wpdb;
+		$docs = array();
+		$t    = Db::table( 'audit' );
+		$last = 0;
+		do {
+			$rows = Db::rows( $wpdb->prepare( "SELECT * FROM {$t} WHERE id > %d ORDER BY id LIMIT 2000", $last ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+			foreach ( $rows as $r ) {
+				$last = (int) $r['id'];
+				$e    = Schema::audit( $r );
+				if ( $e ) {
+					$docs[ Audit::DOC_PREFIX . substr( $e['created_at'], 0, 7 ) ]['entries'][] = $e;
+				}
+			}
+		} while ( count( $rows ) === 2000 );
+		return $docs;
+	}
+
+	/**
+	 * Build a full backup.
 	 *
 	 * @return array
 	 */
 	public static function export_backup() {
-		$docs = array();
-		foreach ( Store::data_names() as $name ) {
-			if ( Orders::INDEX === $name ) {
-				continue; // Rebuilt on restore.
-			}
-			$data = Store::get( $name );
-			if ( Settings::DOC === $name && isset( $data['smtp']['password'] ) ) {
-				$data['smtp']['password'] = '';
-			}
-			$docs[ $name ] = $data;
+		$docs = self::documents();
+		if ( isset( $docs[ Settings::DOC ]['smtp'] ) ) {
+			$docs[ Settings::DOC ]['smtp']['password'] = '';
 		}
 		return array(
 			'format'      => self::BACKUP_FORMAT,
@@ -493,6 +549,16 @@ class Import_Export {
 			'plugin'      => BMLT_LIT_VERSION,
 			'documents'   => $docs,
 		);
+	}
+
+	/**
+	 * Whether a backup document name is valid ("settings", "orders/2026-10", ...).
+	 *
+	 * @param mixed $name Name.
+	 * @return bool
+	 */
+	public static function valid_name( $name ) {
+		return is_string( $name ) && (bool) preg_match( '#^[a-z0-9_-]+(/[a-z0-9_-]+)?$#', $name );
 	}
 
 	/**
@@ -520,7 +586,7 @@ class Import_Export {
 			'users'     => 0,
 		);
 		foreach ( $data['documents'] as $name => $doc ) {
-			if ( ! is_string( $name ) || ! Store::valid_name( $name ) || ! is_array( $doc ) ) {
+			if ( ! self::valid_name( $name ) || ! is_array( $doc ) ) {
 				continue;
 			}
 			if ( Settings::DOC === $name ) {
@@ -598,45 +664,126 @@ class Import_Export {
 	}
 
 	/**
-	 * Replace all stored data with a validated backup. A snapshot of the current data is taken first.
+	 * Replace all stored data with a validated backup, in one transaction: if anything fails, nothing changes.
+	 * This site's identity and its SMTP password are kept.
 	 *
 	 * @param array $valid Result of validate_backup().
 	 * @return true|\WP_Error
 	 */
 	public static function restore_backup( array $valid ) {
-		$snap = Store::snapshot( 'pre-restore' );
-		if ( is_wp_error( $snap ) ) {
-			return $snap;
-		}
-		$docs   = $valid['documents'];
-		$result = Store::tx(
-			static function () use ( $docs, $valid ) {
-				// Keep this site's identity and its own (site-encrypted) SMTP password.
-				$current = Store::get( Settings::DOC );
+		$result = Db::tx(
+			static function () use ( $valid ) {
+				$docs = $valid['documents'];
+				$meta = Settings::meta();
 				if ( isset( $docs[ Settings::DOC ] ) ) {
-					$docs[ Settings::DOC ]['meta'] = isset( $current['meta'] ) && is_array( $current['meta'] ) ? $current['meta'] : array();
-					$docs[ Settings::DOC ]         = Settings::with_meta( $docs[ Settings::DOC ] );
-					$docs[ Settings::DOC ]['meta']['restored_at']   = time();
-					$docs[ Settings::DOC ]['meta']['restored_from'] = $valid['site'];
-					$docs[ Settings::DOC ]['smtp']['password']      = isset( $current['smtp']['password'] ) ? (string) $current['smtp']['password'] : '';
+					$current                                   = Settings::raw( Settings::SMTP );
+					$docs[ Settings::DOC ]['smtp']['password'] = isset( $current['password'] ) ? (string) $current['password'] : '';
+					$meta['restored_at']                       = time();
+					$meta['restored_from']                     = $valid['site'];
 				}
-				// Remove month files that are not part of the backup (true restore, not merge).
-				foreach ( array_merge( Store::names( 'orders' ), Store::names( 'audit' ) ) as $existing ) {
-					if ( Orders::INDEX !== $existing && ! isset( $docs[ $existing ] ) ) {
-						Store::delete( $existing );
-					}
-				}
-				foreach ( $docs as $name => $data ) {
-					Store::put( $name, $data );
-				}
+				self::write_documents( $docs );
+				Settings::save_meta( $meta );
 				return true;
 			}
 		);
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-		$index = Orders::rebuild_index();
 		Settings::flush();
-		return is_wp_error( $index ) ? $index : true;
+		return $result;
+	}
+
+	/**
+	 * Write normalized documents (from validate_backup(), a migration or the files of version 6) to the database.
+	 * Must run inside a transaction. Settings, catalog, inventory and permissions are replaced when the documents
+	 * include them; orders and audit entries are always replaced by the documents' (a restore, not a merge).
+	 *
+	 * @param array $docs Normalized documents.
+	 * @throws Db_Error On failure.
+	 */
+	public static function write_documents( array $docs ) {
+		if ( ! Db::in_tx() ) {
+			throw new Db_Error( 'write_documents() must run inside a transaction.' );
+		}
+		if ( isset( $docs[ Settings::DOC ] ) ) {
+			foreach ( Settings::sections() as $section ) {
+				$value = isset( $docs[ Settings::DOC ][ $section ] ) && is_array( $docs[ Settings::DOC ][ $section ] ) ? $docs[ Settings::DOC ][ $section ] : array();
+				Db::set_option( Settings::option( $section ), $value, in_array( $section, Settings::AUTOLOAD, true ) );
+			}
+		}
+		if ( isset( $docs[ Catalog::DOC ] ) ) {
+			Db::q( 'DELETE FROM ' . Db::table( 'items' ) );
+			$rows = array();
+			$max  = 0;
+			foreach ( $docs[ Catalog::DOC ]['items'] as $item ) {
+				$row = array();
+				foreach ( array( 'id', 'area_id', 'sku', 'name', 'short_description', 'long_description', 'category', 'price', 'is_active', 'sort_order', 'image_url', 'reference_url', 'naws_id', 'created_at', 'updated_at' ) as $k ) {
+					$row[ $k ] = isset( $item[ $k ] ) ? $item[ $k ] : '';
+				}
+				$rows[] = $row;
+				$max    = max( $max, (int) $item['id'] );
+			}
+			Db::insert_many( 'items', $rows );
+			Db::raise_counter( 'item', max( $max + 1, isset( $docs[ Catalog::DOC ]['next_id'] ) ? (int) $docs[ Catalog::DOC ]['next_id'] : 1 ) );
+		}
+		if ( isset( $docs[ Inventory::DOC ] ) ) {
+			Db::q( 'DELETE FROM ' . Db::table( 'inventory' ) );
+			$rows = array();
+			foreach ( $docs[ Inventory::DOC ]['areas'] as $area_id => $items ) {
+				foreach ( $items as $item_id => $r ) {
+					$rows[] = array(
+						'area_id'     => (int) $area_id,
+						'item_id'     => (int) $item_id,
+						'on_hand'     => (int) $r['on_hand'],
+						'reserved'    => (int) $r['reserved'],
+						'low_stock'   => (int) $r['low'],
+						'reorder_qty' => (int) $r['reorder'],
+						'notes'       => (string) $r['notes'],
+						'special'     => (int) $r['special'],
+						'updated_at'  => '' !== (string) $r['updated_at'] ? $r['updated_at'] : null,
+						'updated_by'  => (int) $r['updated_by'],
+					);
+				}
+			}
+			Db::insert_many( 'inventory', $rows );
+		}
+		if ( isset( $docs[ Permissions::DOC ] ) ) {
+			Db::q( 'DELETE FROM ' . Db::table( 'permissions' ) );
+			foreach ( $docs[ Permissions::DOC ]['users'] as $uid => $g ) {
+				Permissions::put_grant( (int) $uid, $g['caps'], $g['areas'] );
+			}
+		}
+
+		foreach ( array( 'order_notes', 'order_items', 'orders' ) as $t ) {
+			Db::q( 'DELETE FROM ' . Db::table( $t ) );
+		}
+		Db::q( 'DELETE FROM ' . Db::table( 'audit' ) );
+		$max_order = 0;
+		$audit     = array();
+		$hashes    = array();
+		foreach ( $docs as $name => $doc ) {
+			if ( 0 === strpos( $name, Orders::DOC_PREFIX ) ) {
+				foreach ( $doc['orders'] as $rec ) {
+					// A submission hash only guards against double submits; it must be unique, so a repeated one is dropped.
+					if ( '' !== (string) $rec['submission_hash'] && isset( $hashes[ $rec['submission_hash'] ] ) ) {
+						$rec['submission_hash'] = '';
+					}
+					$hashes[ (string) $rec['submission_hash'] ] = true;
+					Orders::insert_record( $rec, $rec['items'], $rec['notes_log'] );
+					$max_order = max( $max_order, (int) $rec['id'] );
+				}
+			} elseif ( 0 === strpos( $name, Audit::DOC_PREFIX ) ) {
+				foreach ( $doc['entries'] as $e ) {
+					$audit[] = Audit::row( $e );
+				}
+			}
+		}
+		usort(
+			$audit,
+			static function ( $a, $b ) {
+				return strcmp( $a['created_at'], $b['created_at'] );
+			}
+		);
+		Db::insert_many( 'audit', $audit );
+		if ( $max_order ) {
+			Db::raise_counter( 'order', $max_order + 1 );
+		}
 	}
 }

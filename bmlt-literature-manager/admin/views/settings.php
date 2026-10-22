@@ -3,7 +3,7 @@
  * Settings view (tabs).
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  *
  * @var array  $tabs
  * @var string $tab
@@ -94,7 +94,7 @@ $g        = $general;
 					<input type="text" id="bmlt-lit-add-user" name="add_user" class="regular-text">
 					<span class="description"><?php esc_html_e( 'Grants view orders, manage orders and manage inventory. Adjust checkboxes afterwards.', 'bmlt-literature-manager' ); ?></span>
 				</p>
-				<p class="description"><?php esc_html_e( 'Capabilities granted by a role can only be removed by changing the user’s role. Permissions set here are stored in the literature data directory, so database pushes do not change them.', 'bmlt-literature-manager' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Capabilities granted by a role can only be removed by changing the user’s role. Permissions set here are stored in the plugin’s own database table.', 'bmlt-literature-manager' ); ?></p>
 				<?php submit_button( __( 'Save permissions', 'bmlt-literature-manager' ) ); ?>
 			<?php else : ?>
 				<p class="description"><?php esc_html_e( 'Only site administrators can change permissions.', 'bmlt-literature-manager' ); ?></p>
@@ -274,7 +274,7 @@ $g        = $general;
 						</td></tr>
 					<tr><th scope="row"><?php esc_html_e( 'Uninstall', 'bmlt-literature-manager' ); ?></th>
 						<td><label><input type="checkbox" name="delete_data_on_uninstall" value="1" <?php checked( (int) $g['delete_data_on_uninstall'], 1 ); ?>> <strong><?php esc_html_e( 'Delete plugin data when uninstalling', 'bmlt-literature-manager' ); ?></strong></label>
-							<p class="description"><?php esc_html_e( 'Off by default. When on, deleting the plugin removes the JSON data directory (all orders, catalog, inventory, audit history and settings) permanently. Deactivating never deletes data.', 'bmlt-literature-manager' ); ?></p></td></tr>
+							<p class="description"><?php esc_html_e( 'Off by default. When on, deleting the plugin removes its database tables and options (all orders, catalog, inventory, audit history and settings) permanently. Deactivating never deletes data.', 'bmlt-literature-manager' ); ?></p></td></tr>
 				</table>
 			<?php endif; ?>
 

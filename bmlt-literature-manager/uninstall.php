@@ -3,10 +3,10 @@
  * Uninstall routine.
  *
  * Data is removed ONLY when "Delete plugin data when uninstalling" was explicitly enabled
- * (Literature → Settings → Advanced). Otherwise the JSON data directory is left untouched.
+ * (Literature → Settings → Advanced). Otherwise the tables and options are left untouched.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/includes/class-helpers.php';
-require_once __DIR__ . '/includes/class-store.php';
+foreach ( array( 'helpers', 'db', 'db-error', 'settings', 'catalog', 'inventory', 'permissions', 'import-export', 'legacy-files', 'bmlt-client' ) as $bmlt_lit_class ) {
+	require_once __DIR__ . '/includes/class-' . $bmlt_lit_class . '.php';
+}
 
 if ( ! function_exists( 'bmlt_lit_uninstall_site' ) ) :
 
@@ -28,8 +29,8 @@ function bmlt_lit_uninstall_site() {
 
 	wp_clear_scheduled_hook( 'bmlt_lit_cron_refresh' );
 
-	$settings = \BMLT_Lit\Store::get( 'settings' );
-	$delete   = ! empty( $settings['general']['delete_data_on_uninstall'] );
+	$general = get_option( \BMLT_Lit\Settings::option( \BMLT_Lit\Settings::GENERAL ), array() );
+	$delete  = is_array( $general ) && ! empty( $general['delete_data_on_uninstall'] );
 	if ( ! $delete ) {
 		// v1.0 installs that never migrated kept the flag in wp_options.
 		$legacy = get_option( 'bmlt_lit_settings', array() );
@@ -39,12 +40,19 @@ function bmlt_lit_uninstall_site() {
 		return;
 	}
 
-	// JSON data directory (only if it really is ours: it must contain settings or a catalog). On a network, the main
-	// site's directory also holds the other sites' "site-<id>" directories: those follow their own site's choice.
-	$dir = \BMLT_Lit\Store::dir();
-	if ( '' !== $dir && is_dir( $dir ) && ( \BMLT_Lit\Store::exists( 'settings' ) || \BMLT_Lit\Store::exists( 'catalog' ) ) ) {
-		\BMLT_Lit\Store::rrmdir( $dir, is_multisite() && get_current_blog_id() <= 1 ? '/^site-\d+$/' : '' );
+	// The plugin's tables and options.
+	\BMLT_Lit\Db::drop_tables();
+	foreach ( \BMLT_Lit\Settings::sections() as $section ) {
+		delete_option( \BMLT_Lit\Settings::option( $section ) );
 	}
+	delete_option( \BMLT_Lit\Settings::META_OPTION );
+	foreach ( \BMLT_Lit\Bmlt_Client::cache_options() as $option ) {
+		delete_option( $option );
+	}
+
+	// The data folder of version 6, if it is still there (on a network, the main site's folder keeps the other
+	// sites' "site-<id>" folders: those follow their own site's choice).
+	\BMLT_Lit\Legacy_Files::remove();
 
 	// Legacy v1.0 tables and options.
 	foreach ( array( 'items', 'inventory', 'orders', 'order_items', 'order_notes', 'audit' ) as $t ) {
@@ -73,7 +81,6 @@ endif;
 if ( is_multisite() ) {
 	foreach ( get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $bmlt_lit_site ) {
 		switch_to_blog( (int) $bmlt_lit_site );
-		\BMLT_Lit\Store::flush_cache();
 		bmlt_lit_uninstall_site();
 		restore_current_blog();
 	}

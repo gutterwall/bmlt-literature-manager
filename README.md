@@ -3,8 +3,8 @@
 A WordPress plugin for Narcotics Anonymous service bodies: groups order literature from a public form (they pick
 their meeting from the BMLT Root Server, which tells the plugin their Area), each Area keeps its own inventory and
 special orders, and the Area's literature workers process orders from a protected page or the WordPress dashboard.
-All data lives in protected JSON files outside the WordPress database, so pushing a staging database to production
-never overwrites production orders.
+All data lives in the WordPress database, in the plugin's own InnoDB tables and options, and every change is one
+transaction: saved completely or not at all.
 
 | | |
 |---|---|
@@ -16,8 +16,8 @@ never overwrites production orders.
 Each release is built by CI from the tagged commit, and the zip carries a GitHub build provenance attestation:
 
 ```sh
-gh attestation verify bmlt-literature-manager-6.3.0.zip --repo gutterwall/bmlt-literature-manager
-sha256sum -c bmlt-literature-manager-6.3.0.zip.sha256
+gh attestation verify bmlt-literature-manager-7.0.0.zip --repo gutterwall/bmlt-literature-manager
+sha256sum -c bmlt-literature-manager-7.0.0.zip.sha256
 ```
 
 Inside the zip, `build.json` names the commit it was built from and `checksums.sha256` lists every file.
@@ -43,8 +43,8 @@ WordPress refuses Root Server URLs on private addresses or unusual ports; allow 
 
 | Command | What it covers | Needs |
 |---|---|---|
-| `vendor/bin/phpunit -c tests/wordpress/phpunit.xml.dist` | 79 WordPress integration tests: the public order flow (server-side pricing, stock and special-order split, review and confirm, tampering, spam checks, rate limit, duplicates, cached forms), order statuses and inventory under each inventory mode, the REST permission matrix by role and Area, BMLT caching and outages, import/export and backup/restore (including hostile files), privacy export and erasure, admin screens and handlers, SMTP, the JSON store (atomic writes, locking, damaged files, nothing readable on nginx), upgrade from 1.0 and 6.2, uninstall on single sites and networks | `WP_TESTS_DIR` (`bin/install-wp-tests.sh`), `composer install`; `WP_MULTISITE=1` for a network |
-| `bin/e2e.sh <dir>` | the release zip on Apache and on nginx: an administrator connects BMLT and chooses Areas in Chrome; visitors order through the form; email arrives through the plugin's SMTP setting at a sink; workers (restricted and not) process orders; every file in the data folder is requested over the web on both servers | Apache, nginx, PHP-FPM, WP-CLI, Chrome, MySQL (see the script's header) |
+| `vendor/bin/phpunit -c tests/wordpress/phpunit.xml.dist` | 86 WordPress integration tests: the public order flow (server-side pricing, stock and special-order split, review and confirm, tampering, spam checks, rate limit, duplicates, cached forms), order statuses and inventory under each inventory mode, the REST permission matrix by role and Area, BMLT caching and outages, import/export and backup/restore (including hostile files), privacy export and erasure, admin screens and handlers, SMTP; transactions (a refused, failing or throwing change leaves nothing behind — orders, status changes, imports, restores, settings with their audit entry; savepoints; the option cache; waiting for and giving up on another connection's lock); the move from the version 6 data folder (unchanged data, damaged files, a failure half-way) and from 1.0; uninstall on single sites and networks | `WP_TESTS_DIR` (`bin/install-wp-tests.sh`), `composer install`; `WP_MULTISITE=1` for a network |
+| `bin/e2e.sh <dir>` | the release zip on Apache and on nginx: an administrator connects BMLT and chooses Areas in Chrome; visitors order through the form; email arrives through the plugin's SMTP setting at a sink; workers (restricted and not) process orders; the tables (InnoDB) and the orders in them; a site running the published 6.3.0 zip with orders is updated to this zip and everything moves into the database unchanged | Apache, nginx, PHP-FPM, WP-CLI, Chrome, MySQL (see the script's header) |
 | `vendor/bin/phpcs`, `vendor/bin/phpstan analyse` | WordPress security rules (escaping, nonces, input, SQL, i18n) and PHP 7.4+ compatibility; static analysis at level 5 | `composer install` |
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs all of them on every push: WordPress 5.9 on PHP 7.4,

@@ -3,7 +3,7 @@
  * Core plugin bootstrap.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -35,6 +35,7 @@ final class Plugin {
 
 		Permissions::init();
 		add_action( 'init', array( Migrator::class, 'maybe_initialize' ), 5 );
+		add_filter( 'wpmu_drop_tables', array( Db::class, 'site_tables' ), 10, 2 );
 		Email::init();
 		Smtp::init();
 		Bmlt_Client::init();

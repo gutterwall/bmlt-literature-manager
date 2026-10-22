@@ -3,7 +3,7 @@
  * Activation and deactivation.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -44,7 +44,7 @@ class Activator {
 	private static function activate_site() {
 		Permissions::install_roles();
 		delete_transient( 'bmlt_lit_init_attempt' );
-		// Creates the JSON data directory, and migrates v1.0 database data when present.
+		// Creates the tables, and moves the data of earlier versions (version 6 files, version 1.0 tables) into them.
 		Migrator::maybe_initialize();
 		Bmlt_Client::schedule_cron( true );
 	}

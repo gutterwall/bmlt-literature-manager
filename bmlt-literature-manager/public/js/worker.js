@@ -3,7 +3,7 @@
  *
  * Talks to /wp-json/bmlt-lit/v1/ with the logged-in user's REST nonce. All permissions are enforced
  * on the server; this script only provides the interface. Data is inserted with textContent (no HTML injection).
- * @version 6.3.0
+ * @version 7.0.0
  */
 ( function () {
 	'use strict';

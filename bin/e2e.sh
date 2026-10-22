@@ -8,7 +8,8 @@
 #   an SMTP sink (bin/smtp-sink.py) receiving the plugin's mail through its own SMTP setting
 #   headless Chrome as an administrator, a visitor, literature workers (bin/browser-e2e.py)
 #
-# and, on both servers, every file of the plugin's data folder requested over the web.
+# and the plugin's storage in the WordPress database: its tables, and the upgrade of a site running the published
+# 6.3.0 release (JSON data folder) to this version.
 #
 # Usage: bin/e2e.sh <work-dir>      (the directory is created; KEEP=1 leaves the servers' files behind)
 #
@@ -17,6 +18,7 @@
 #   APACHE=apache2  APACHE_MODULES=/usr/lib/apache2/modules  NGINX=nginx  PHP_FPM=php-fpm8.3  CHROME=google-chrome
 #   WP_CORE=<directory with WordPress files> (default: wp core download)   PORT_BASE=8540
 #   PLUGIN_ZIP (default: this version's zip in dist/, built if missing)
+#   PREV_ZIP   (default: the 6.3.0 release, downloaded from GitHub and checked against its published SHA-256)
 set -euo pipefail
 
 [ $# -eq 1 ] || { sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
@@ -49,7 +51,7 @@ PIDS=()
 cleanup() {
 	for pid in "${PIDS[@]}"; do kill "$pid" 2>/dev/null || true; done
 	[ -f "$W/run/apache.pid" ] && kill "$(cat "$W/run/apache.pid")" 2>/dev/null || true
-	mysql_admin -e "DROP DATABASE IF EXISTS e2e_lit" 2>/dev/null || true
+	mysql_admin -e "DROP DATABASE IF EXISTS e2e_lit; DROP DATABASE IF EXISTS e2e_lit_up" 2>/dev/null || true
 	if [ "${KEEP:-0}" != 1 ]; then rm -rf "$W"; fi
 }
 trap cleanup EXIT
@@ -222,7 +224,17 @@ for i in $(seq 1 50); do
 done
 pass "WordPress $("${WP[@]}" core version), theme $("${WP[@]}" theme list --status=active --field=name), plugin $("${WP[@]}" plugin get bmlt-literature-manager --field=version); Apache $("$APACHE" -v | sed -n 's/Server version: Apache\/\([0-9.]*\).*/\1/p'), nginx $("$NGINX" -v 2>&1 | sed 's/.*nginx\///'), PHP $(php -r 'echo PHP_VERSION;')"
 DATA="$W/wp/wp-content/bmlt-literature-data"
-[ -f "$DATA/settings.json.php" ] && pass "data folder created on activation: wp-content/bmlt-literature-data" || fail "no data folder"
+"${WP[@]}" eval '
+	global $wpdb;
+	foreach ( BMLT_Lit\Db::TABLES as $t ) {
+		$e = $wpdb->get_var( $wpdb->prepare( "SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s", BMLT_Lit\Db::table( $t ) ) );
+		echo $t, "=", $e, "\n";
+	}
+	echo "initialized=", BMLT_Lit\Settings::initialized() ? 1 : 0, "\n";
+' > "$W/run/tables.out"
+[ "$(grep -c '=InnoDB$' "$W/run/tables.out")" = 8 ] && grep -q '^initialized=1$' "$W/run/tables.out" \
+	&& pass "activation created the 8 tables (wp_bmlt_literature_*), all InnoDB" || { cat "$W/run/tables.out"; fail "tables"; }
+[ ! -e "$DATA" ] && pass "no data folder is created" || fail "a data folder was created"
 
 "${WP[@]}" user create worker worker@example.org --role=bmlt_lit_worker --user_pass=Worker-pass-1
 "${WP[@]}" user create riverside riverside@example.org --role=bmlt_lit_worker --user_pass=River-pass-1
@@ -262,24 +274,106 @@ python3 "$ROOT/bin/browser-e2e.py" orders "$SITE_A" "$W/run/items.json" "$W/mail
 section "Browser: the same on nginx"
 python3 "$ROOT/bin/browser-e2e.py" orders "$SITE_N" "$W/run/items.json" "$W/mail" nginx
 
-section "The data folder over the web"
-[ "$(find "$DATA/orders" -name '*.json.php' | wc -l)" -ge 2 ] || fail "no order files written"
-mkdir -p "$W/run/probe"
-leak=0
-while IFS= read -r f; do
-	rel=${f#"$W/wp/"}
-	for site in "$SITE_A" "$SITE_N"; do
-		code=$(curl -s -o "$W/run/probe/body" -w '%{http_code}' "$site/$rel")
-		if grep -q 'e2e-visitor\|555-0142\|"orders"\|"items"\|"general"' "$W/run/probe/body"; then
-			echo "    $site/$rel answered $code with data" >&2
-			leak=1
-		fi
-	done
-done < <(find "$DATA" -type f)
-[ "$leak" = 0 ] || fail "files of the data folder are readable over the web"
-pass "every one of $(find "$DATA" -type f | wc -l) files in the data folder (orders, their previous versions, settings, cache) shows nothing on Apache or nginx"
-code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_A/wp-content/bmlt-literature-data/orders/")
-[ "$code" = 403 ] && pass "Apache: the plugin's .htaccess refuses the data folder (403)" || fail "Apache data folder: $code"
+section "Storage"
+"${WP[@]}" eval '
+	global $wpdb;
+	$o = BMLT_Lit\Db::table( "orders" );
+	$i = BMLT_Lit\Db::table( "order_items" );
+	$n = BMLT_Lit\Db::table( "order_notes" );
+	echo "orders=", $wpdb->get_var( "SELECT COUNT(*) FROM $o" ), "\n";
+	echo "without_lines=", $wpdb->get_var( "SELECT COUNT(*) FROM $o WHERE id NOT IN (SELECT order_id FROM $i)" ), "\n";
+	echo "without_history=", $wpdb->get_var( "SELECT COUNT(*) FROM $o WHERE id NOT IN (SELECT order_id FROM $n)" ), "\n";
+' > "$W/run/storage.out"
+grep -q '^orders=[2-9]' "$W/run/storage.out" && grep -q '^without_lines=0$' "$W/run/storage.out" && grep -q '^without_history=0$' "$W/run/storage.out" \
+	&& pass "the orders placed in the browsers are in the database, each with its lines and history ($(sed -n 's/^orders=//p' "$W/run/storage.out") orders)" \
+	|| { cat "$W/run/storage.out"; fail "orders in the database"; }
+[ ! -e "$DATA" ] && pass "nothing was written to a data folder" || fail "files were written to $DATA"
+
+section "Upgrade of a site running 6.3.0 (JSON data folder)"
+PREV_ZIP=${PREV_ZIP:-}
+if [ -z "$PREV_ZIP" ]; then
+	PREV_ZIP="$W/run/bmlt-literature-manager-6.3.0.zip"
+	curl -fsSL --retry 5 -o "$PREV_ZIP" https://github.com/gutterwall/bmlt-literature-manager/releases/download/v6.3.0/bmlt-literature-manager-6.3.0.zip
+	echo "c34ad840fbfc0646fe9c954bae89315fa2a07e3ae23cbbee4fd765c566f3484c  $PREV_ZIP" | sha256sum -c --quiet - || fail "6.3.0 zip checksum"
+fi
+UP=(wp --path="$W/wp-up" --quiet)
+mkdir -p "$W/wp-up" && (cd "$W/wp" && tar --exclude=./wp-config.php --exclude=./wp-content/plugins/bmlt-literature-manager --exclude=./wp-content/uploads --exclude=./wp-content/bmlt-literature-data --exclude=./wp-content/debug.log -cf - .) | tar -xf - -C "$W/wp-up"
+mysql_admin -e "DROP DATABASE IF EXISTS e2e_lit_up; CREATE DATABASE e2e_lit_up CHARACTER SET utf8mb4"
+printf '%s\n' "define( 'DISABLE_WP_CRON', true );" "define( 'WP_DEBUG', true );" "define( 'WP_DEBUG_LOG', true );" "define( 'WP_DEBUG_DISPLAY', false );" \
+	| "${UP[@]}" config create --dbname=e2e_lit_up --dbuser="$DB_ADMIN_USER" --dbpass="$DB_ADMIN_PASS" --dbhost="$DB_HOST:$DB_PORT" --skip-check --force --extra-php
+"${UP[@]}" core install --url=http://upgrade.test --title="Upgrade Region" --admin_user=admin --admin_password=Admin-pass-1 --admin_email=admin@example.org --skip-email
+# The upgrade site's BMLT requests go to the same local fake server.
+cp "$W/wp/wp-content/mu-plugins/e2e-local-bmlt.php" "$W/wp-up/wp-content/mu-plugins/"
+"${UP[@]}" plugin install "$PREV_ZIP" --activate
+# 6.3.0 in use: BMLT connected, the starter catalog, stock, a restricted worker, SMTP, and orders in two states.
+"${UP[@]}" user create riverside riverside@example.org --role=bmlt_lit_worker --user_pass=River-pass-1
+"${UP[@]}" eval '
+	use BMLT_Lit\Settings; use BMLT_Lit\Import_Export; use BMLT_Lit\Inventory; use BMLT_Lit\Catalog; use BMLT_Lit\Orders;
+	wp_set_current_user( 1 );
+	$b = Settings::bmlt();
+	$b["root_url"] = "'"$BMLT_ROOT"'";
+	$b["selected_areas"] = array( 101, 102 );
+	Settings::update( Settings::BMLT, $b );
+	Import_Export::apply( Import_Export::preview_catalog( Import_Export::decode( file_get_contents( BMLT_LIT_DIR . "sample-data/naws-catalog-2026.json" ) ), 0, false, false ) );
+	$bt = Catalog::get_by_sku( "1101", 0 )->id;
+	Inventory::adjust( 101, $bt, array( "set" => 7, "low_stock_threshold" => 2 ), "count" );
+	BMLT_Lit\Permissions::save_grants( array( get_user_by( "login", "riverside" )->ID => array( "caps" => array(), "areas" => array( 101 ) ) ) );
+	BMLT_Lit\Smtp::save( array( "enabled" => 1, "host" => "smtp.example.org", "auth" => 1, "username" => "lit", "password" => "Up-Pass-1", "from_email" => "lit@example.org" ) );
+	$meeting = array( "id" => 1001, "name" => "Upgrade Group", "weekday" => 2, "start_time" => "19:00", "location" => "Hall", "municipality" => "Town" );
+	foreach ( array( 1, 2 ) as $n ) {
+		Orders::create( array( "area_id" => 101, "meeting" => $meeting, "contact_name" => "Upgrade Person $n", "contact_phone" => "555-0100", "contact_email" => "up$n@example.org", "notes" => "", "lines" => array( $bt => $n ), "submission_hash" => hash( "sha256", "up$n" ), "ip_hash" => "" ) );
+	}
+	Orders::update_status( 1, "ready", "On the shelf" );
+	$docs = Import_Export::export_backup()["documents"];
+	unset( $docs["orders/index"] );
+	file_put_contents( "'"$W/run/before.json"'", wp_json_encode( $docs ) );
+	echo Orders::count_all(), " orders in ", BMLT_Lit\Store::dir(), "\n";
+' > "$W/run/up-before.out" 2>&1 || true
+grep -q "^2 orders in $W/wp-up/wp-content/bmlt-literature-data$" "$W/run/up-before.out" \
+	&& pass "a 6.3.0 site in use: catalog, stock, permissions, SMTP and 2 orders in its data folder" || { cat "$W/run/up-before.out"; fail "6.3.0 site"; }
+(cd "$W/wp-up/wp-content/bmlt-literature-data" && find . -type f -exec sha256sum {} + | sort -k2) > "$W/run/folder-before.sum"
+
+"${UP[@]}" plugin install "$PLUGIN_ZIP" --force
+"${UP[@]}" eval '
+	use BMLT_Lit\Import_Export; use BMLT_Lit\Settings; use BMLT_Lit\Orders;
+	$before = json_decode( file_get_contents( "'"$W/run/before.json"'" ), true );
+	$after  = Import_Export::documents();
+	$diff   = array();
+	foreach ( $before as $name => $doc ) {
+		if ( "settings" === $name ) {
+			foreach ( array( "general", "bmlt", "areas", "templates" ) as $s ) {
+				if ( $doc[ $s ] != Settings::raw( $s ) ) { $diff[] = "settings/$s"; }
+			}
+		} elseif ( 0 === strpos( $name, "audit/" ) ) {
+			if ( ! isset( $after[ $name ] ) || count( $after[ $name ]["entries"] ) !== count( $doc["entries"] ) + 1 ) { $diff[] = $name; }
+		} elseif ( ! isset( $after[ $name ] ) || $after[ $name ] != $doc ) {
+			$diff[] = $name;
+		}
+	}
+	echo "version=", BMLT_LIT_VERSION, "\n";
+	echo "diff=", implode( ",", $diff ), "\n";
+	echo "smtp=", BMLT_Lit\Smtp::password(), "\n";
+	echo "riverside=", implode( ",", BMLT_Lit\Permissions::allowed_areas( get_user_by( "login", "riverside" )->ID ) ), "\n";
+	echo "moved=", empty( Settings::meta()["migrated_from_files"] ) ? 0 : 1, "\n";
+	wp_set_current_user( 1 );
+	$r = Orders::create( array( "area_id" => 101, "meeting" => array( "id" => 1001, "name" => "Upgrade Group", "weekday" => 2, "start_time" => "19:00", "location" => "Hall", "municipality" => "Town" ), "contact_name" => "After", "contact_phone" => "555-0100", "contact_email" => "after@example.org", "notes" => "", "lines" => array( BMLT_Lit\Catalog::get_by_sku( "1101", 0 )->id => 1 ), "submission_hash" => hash( "sha256", "after" ), "ip_hash" => "" ) );
+	echo "next=", is_wp_error( $r ) ? $r->get_error_message() : $r["order_id"], "\n";
+	echo "status=", Orders::get( 1 )->status, "\n";
+' > "$W/run/up-after.out" 2>&1 || true
+grep -q '^version=' "$W/run/up-after.out" && grep -q '^moved=1$' "$W/run/up-after.out" && grep -q '^diff=$' "$W/run/up-after.out" \
+	&& grep -q '^smtp=Up-Pass-1$' "$W/run/up-after.out" && grep -q '^riverside=101$' "$W/run/up-after.out" \
+	&& grep -q '^next=3$' "$W/run/up-after.out" && grep -q '^status=ready$' "$W/run/up-after.out" \
+	&& pass "after the update everything is in the database unchanged (catalog, stock, permissions, settings, SMTP password, orders with lines and history); the next order is number 3" \
+	|| { cat "$W/run/up-after.out"; fail "upgrade from 6.3.0"; }
+(cd "$W/wp-up/wp-content/bmlt-literature-data" && find . -type f -exec sha256sum {} + | sort -k2) > "$W/run/folder-after.sum"
+cmp -s "$W/run/folder-before.sum" "$W/run/folder-after.sum" && pass "the 6.3.0 data folder was left untouched" || fail "the data folder changed"
+"${UP[@]}" eval 'echo is_wp_error( BMLT_Lit\Migrator::remove_files() ) ? "kept" : "removed";' > "$W/run/remove.out" 2>&1 || true
+grep -q '^removed$' "$W/run/remove.out" && [ ! -e "$W/wp-up/wp-content/bmlt-literature-data" ] && pass "Delete the old data folder removes it" || { cat "$W/run/remove.out"; fail "remove the old folder"; }
+if [ -s "$W/wp-up/wp-content/debug.log" ] && grep -q 'bmlt-literature-manager' "$W/wp-up/wp-content/debug.log"; then
+	grep 'bmlt-literature-manager' "$W/wp-up/wp-content/debug.log" | tail -20
+	fail "the plugin logged PHP notices or errors during the upgrade"
+fi
+pass "no PHP warnings or errors from either version during the upgrade"
 
 section "REST API without a login"
 for site in "$SITE_A" "$SITE_N"; do

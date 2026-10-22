@@ -1,9 +1,9 @@
 <?php
 /**
- * Area-specific inventory (inventory.json.php).
+ * Area-specific inventory (the inventory table: one row per Area + item).
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -13,26 +13,147 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Inventory is always tracked per Area + item.
  *
- * Document shape: { "areas": { "<area_id>": { "<item_id>": { on_hand, reserved, low, reorder, notes, updated_at, updated_by } } } }
+ * In memory the rows form a document { "areas": { "<area_id>": { "<item_id>": { on_hand, reserved, low, reorder,
+ * notes, special, updated_at, updated_by } } } }, the shape backups use.
  */
 class Inventory {
 
 	/**
-	 * Store document.
+	 * Name of the inventory document in backups.
 	 */
 	const DOC = 'inventory';
 
 	/**
-	 * Raw document.
+	 * Request cache: blog id => document.
+	 *
+	 * @var array
+	 */
+	private static $cache = array();
+
+	/**
+	 * Drop the request cache.
+	 */
+	public static function flush() {
+		self::$cache = array();
+	}
+
+	/**
+	 * Document row from a table row.
+	 *
+	 * @param array $r Table row.
+	 * @return array
+	 */
+	private static function from_row( array $r ) {
+		return array(
+			'on_hand'    => (int) $r['on_hand'],
+			'reserved'   => (int) $r['reserved'],
+			'low'        => (int) $r['low_stock'],
+			'reorder'    => (int) $r['reorder_qty'],
+			'notes'      => (string) $r['notes'],
+			'special'    => (int) $r['special'],
+			'updated_at' => null === $r['updated_at'] ? '' : (string) $r['updated_at'],
+			'updated_by' => (int) $r['updated_by'],
+		);
+	}
+
+	/**
+	 * Rows as a document.
+	 *
+	 * @param array[] $rows Table rows.
+	 * @return array
+	 */
+	private static function to_doc( array $rows ) {
+		$doc = array( 'areas' => array() );
+		foreach ( $rows as $r ) {
+			$doc['areas'][ (int) $r['area_id'] ][ (int) $r['item_id'] ] = self::from_row( $r );
+		}
+		return $doc;
+	}
+
+	/**
+	 * Every inventory row (inside a transaction: as the transaction sees them, never cached).
 	 *
 	 * @return array
 	 */
 	public static function doc() {
-		$d = Store::get( self::DOC, array( 'areas' => array() ) );
-		if ( ! isset( $d['areas'] ) || ! is_array( $d['areas'] ) ) {
-			$d['areas'] = array();
+		$blog = get_current_blog_id();
+		if ( ! Db::in_tx() && isset( self::$cache[ $blog ] ) ) {
+			return self::$cache[ $blog ];
 		}
-		return $d;
+		$t   = Db::table( 'inventory' );
+		$doc = self::to_doc( Db::rows( "SELECT * FROM {$t} ORDER BY area_id, item_id" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+		if ( ! Db::in_tx() ) {
+			self::$cache[ $blog ] = $doc;
+		}
+		return $doc;
+	}
+
+	/**
+	 * The rows of one Area for some items, as a document.
+	 *
+	 * @param int   $area_id  Area.
+	 * @param int[] $item_ids Items.
+	 * @return array
+	 */
+	public static function doc_for( $area_id, array $item_ids ) {
+		global $wpdb;
+		$item_ids = array_values( array_unique( array_filter( array_map( 'absint', $item_ids ) ) ) );
+		if ( ! $item_ids ) {
+			return array( 'areas' => array() );
+		}
+		$t    = Db::table( 'inventory' );
+		$ph   = implode( ',', array_fill( 0, count( $item_ids ), '%d' ) );
+		$args = array_merge( array( absint( $area_id ) ), $item_ids );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- table name; $ph is a list of %d placeholders.
+		return self::to_doc( Db::rows( $wpdb->prepare( "SELECT * FROM {$t} WHERE area_id = %d AND item_id IN ({$ph})", $args ) ) );
+	}
+
+	/**
+	 * Save one row (inside a transaction).
+	 *
+	 * @param int   $area_id Area.
+	 * @param int   $item_id Item.
+	 * @param array $row     Document row.
+	 * @throws Db_Error On failure.
+	 */
+	public static function put_row( $area_id, $item_id, array $row ) {
+		Db::upsert(
+			'inventory',
+			array(
+				'area_id'     => absint( $area_id ),
+				'item_id'     => absint( $item_id ),
+				'on_hand'     => max( 0, (int) $row['on_hand'] ),
+				'reserved'    => max( 0, (int) $row['reserved'] ),
+				'low_stock'   => max( 0, (int) $row['low'] ),
+				'reorder_qty' => max( 0, (int) $row['reorder'] ),
+				'notes'       => isset( $row['notes'] ) ? (string) $row['notes'] : '',
+				'special'     => ! empty( $row['special'] ) ? 1 : 0,
+				'updated_at'  => ! empty( $row['updated_at'] ) ? (string) $row['updated_at'] : null,
+				'updated_by'  => isset( $row['updated_by'] ) ? absint( $row['updated_by'] ) : 0,
+			),
+			array( 'area_id', 'item_id' )
+		);
+	}
+
+	/**
+	 * Save the rows of $new that differ from $old (both documents; inside a transaction).
+	 *
+	 * @param array $old Document before.
+	 * @param array $new Document after.
+	 * @return int Rows saved.
+	 * @throws Db_Error On failure.
+	 */
+	public static function save_changes( array $old, array $new ) {
+		$n = 0;
+		foreach ( isset( $new['areas'] ) ? $new['areas'] : array() as $area_id => $rows ) {
+			foreach ( $rows as $item_id => $row ) {
+				if ( self::row( $old, $area_id, $item_id ) !== $row ) {
+					self::put_row( $area_id, $item_id, $row );
+					++$n;
+				}
+			}
+		}
+		return $n;
 	}
 
 	/**
@@ -210,7 +331,7 @@ class Inventory {
 	}
 
 	/**
-	 * Adjust inventory for one Area + item inside a locked transaction.
+	 * Adjust inventory for one Area + item (one transaction, audit entry included).
 	 *
 	 * @param int    $area_id Area.
 	 * @param int    $item_id Item.
@@ -227,8 +348,8 @@ class Inventory {
 		}
 		$old    = null;
 		$active = true;
-		$result = Store::tx(
-			static function () use ( $area_id, $item_id, $changes, &$old, &$active ) {
+		$result = Db::tx(
+			static function () use ( $area_id, $item_id, $changes, $reason, $action, &$old, &$active ) {
 				$item = Catalog::get( $item_id );
 				if ( ! $item ) {
 					return new \WP_Error( 'item', __( 'That literature item does not exist.', 'bmlt-literature-manager' ) );
@@ -237,7 +358,7 @@ class Inventory {
 					return new \WP_Error( 'item_area', __( 'That item belongs to a different Area’s catalog.', 'bmlt-literature-manager' ) );
 				}
 				$active  = (bool) (int) $item->is_active;
-				$doc     = self::doc();
+				$doc     = self::doc_for( $area_id, array( $item_id ) );
 				$current = self::row( $doc, $area_id, $item_id );
 				$old     = array(
 					'on_hand'             => $current ? (int) $current['on_hand'] : 0,
@@ -269,27 +390,26 @@ class Inventory {
 				if ( $new === $old && $current ) {
 					return $new + array( 'changed' => false );
 				}
-				$doc['areas'][ $area_id ][ $item_id ] = array(
-					'on_hand'    => $new['on_hand'],
-					'reserved'   => $old['reserved'],
-					'low'        => $new['low_stock_threshold'],
-					'reorder'    => $new['reorder_quantity'],
-					'notes'      => $new['notes'],
-					'special'    => $new['special'],
-					'updated_at' => Helpers::now_gmt(),
-					'updated_by' => get_current_user_id(),
+				self::put_row(
+					$area_id,
+					$item_id,
+					array(
+						'on_hand'    => $new['on_hand'],
+						'reserved'   => $old['reserved'],
+						'low'        => $new['low_stock_threshold'],
+						'reorder'    => $new['reorder_quantity'],
+						'notes'      => $new['notes'],
+						'special'    => $new['special'],
+						'updated_at' => Helpers::now_gmt(),
+						'updated_by' => get_current_user_id(),
+					)
 				);
-				Store::put( self::DOC, $doc );
+				Audit::log( $action, 'inventory', $item_id, $old, $new, $area_id, Helpers::limit( sanitize_text_field( (string) $reason ), 500 ) );
 				return $new + array( 'changed' => true );
 			}
 		);
 		if ( is_wp_error( $result ) ) {
 			return $result;
-		}
-		if ( $result['changed'] ) {
-			$log = $result;
-			unset( $log['changed'] );
-			Audit::log( $action, 'inventory', $item_id, $old, $log, $area_id, Helpers::limit( sanitize_text_field( (string) $reason ), 500 ) );
 		}
 		$result['available'] = max( 0, $result['on_hand'] - $result['reserved'] );
 		$result['status']    = self::area_status(
@@ -350,10 +470,7 @@ class Inventory {
 	 * @return int
 	 */
 	public static function count_records() {
-		$n = 0;
-		foreach ( self::doc()['areas'] as $rows ) {
-			$n += is_array( $rows ) ? count( $rows ) : 0;
-		}
-		return $n;
+		$t = Db::table( 'inventory' );
+		return (int) Db::var( "SELECT COUNT(*) FROM {$t}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
 	}
 }

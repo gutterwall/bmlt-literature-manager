@@ -9,7 +9,6 @@ namespace BmltLitTest;
 use BMLT_Lit\Inventory;
 use BMLT_Lit\Orders;
 use BMLT_Lit\Settings;
-use BMLT_Lit\Store;
 
 class OrderWorkflowTest extends TestCase {
 
@@ -97,22 +96,17 @@ class OrderWorkflowTest extends TestCase {
 		$this->assertSame( 'System / public', $detail['history'][3]['user'] );
 	}
 
-	public function test_order_index_can_be_rebuilt_and_order_numbers_are_never_reused() {
+	public function test_order_numbers_are_never_reused() {
+		global $wpdb;
 		$a = $this->place_order( $this->order_post( array( 'BT' => 1 ) ) )['order'];
 		$b = $this->place_order( $this->order_post( array( 'IP1' => 1 ) ) )['order'];
-		unlink( Store::path( Orders::INDEX ) );
-		foreach ( glob( $this->dir . '/orders/index*' ) as $f ) {
-			unlink( $f );
-		}
-		self::reset_plugin_state();
-		$this->assertSame( 0, Orders::count_all() );
-		$res = Orders::rebuild_index();
-		$this->assertSame( 2, $res['orders'] );
-		$this->assertSame( $b->order_number, Orders::get( $b->id )->order_number );
+		$this->assertSame( array( 1, 2 ), array( (int) $a->id, (int) $b->id ) );
 		$this->assertTrue( \BMLT_Lit\Catalog::is_referenced( $this->items['BT'] ) );
+		// Even when the newest order's rows are gone (a restore of an older backup does that), its number stays used.
+		$wpdb->delete( \BMLT_Lit\Db::table( 'orders' ), array( 'id' => $b->id ) );
 		$c = $this->place_order( $this->order_post( array( 'IP1' => 2 ) ) )['order'];
 		$this->assertSame( 3, (int) $c->id );
-		$this->assertNotSame( $a->order_number, $c->order_number );
+		$this->assertNotSame( $b->order_number, $c->order_number );
 	}
 
 	public function test_order_list_filters_and_sorts() {

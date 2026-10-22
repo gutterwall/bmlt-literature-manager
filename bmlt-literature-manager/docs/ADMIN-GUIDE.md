@@ -1,35 +1,26 @@
 # BMLT Literature Manager — Administrator Guide
 
-_Version 6.3.0_
+_Version 7.0.0_
 
 This guide walks through setting up and running the plugin. Menu locations refer to the **Literature** menu in the WordPress dashboard.
 
 ## 1. Installation and activation
 
-Upload the plugin zip under **Plugins → Add New → Upload Plugin**, then click **Activate**. Activation creates the JSON data directory (see 1a), two roles (Literature Worker, Literature Chair), and administrators automatically have every literature capability. Nothing is ever deleted on deactivation.
+Upload the plugin zip under **Plugins → Add New → Upload Plugin**, then click **Activate**. Activation creates the plugin's database tables (see 1a), two roles (Literature Worker, Literature Chair), and administrators automatically have every literature capability. Nothing is ever deleted on deactivation.
 
 ## 1a. Where data is stored (read this before going live)
 
-Version 2.0 stores **all** literature data in JSON files instead of the WordPress database: catalog, inventory, orders and their history, the audit log, settings, Area email routing, email templates, SMTP settings and literature permissions. This means pushing a staging **database** to production cannot overwrite production orders.
+Version 7 stores all literature data in the WordPress database. Catalog, inventory, orders with their lines and history, the audit log and literature permissions are in the plugin's own tables (`wp_bmlt_literature_*`, InnoDB). Settings, Area email routing, email templates, SMTP settings and the BMLT cache are options named `bmlt_literature_*`.
 
-Many hosts' "push staging to production" also copies **files**. To be safe, keep the data directory outside anything that gets pushed. On **each** server, add this to `wp-config.php` above the "That's all, stop editing" line, using a path outside the WordPress folder that the web server can write to:
+Every change is saved completely or not at all. An order with its lines, history and reserved stock; a status change with its stock effect; a whole catalog or inventory import; a restore; a settings or permissions change with its audit entry: each is one database transaction. If anything fails, everything it wrote is rolled back and the screen says nothing was changed. Changes wait for each other (up to 15 seconds), so simultaneous orders cannot oversell stock. **Tools / Status** shows whether every table supports transactions.
 
-```php
-define( 'BMLT_LIT_DATA_DIR', '/home/youraccount/bmlt-literature-data' );
-```
-
-If you already have data in the default folder (`wp-content/bmlt-literature-data`), move that folder to the new path first, then add the line. Staging and production must each have their **own** directory — never share one.
-
-Safety features:
-
-- Data files end in `.json.php` and start with `<?php exit; ?>`, so they show nothing if someone requests them in a browser. `.htaccess`, `web.config` and `index.php` guards are added as well.
-- Every save takes an exclusive lock and replaces files atomically, so simultaneous orders cannot corrupt data or oversell stock. If your host uses a network filesystem that does not support file locks, add `define( 'BMLT_LIT_LOCK_METHOD', 'mkdir' );`.
-- Each file keeps its previous version as `<name>.bak.json.php`; damaged files are never silently overwritten. Snapshots are saved in `backups/` before restores, migrations and repairs.
-- The data remembers which site URL created it. If production opens data created by staging (or the other way round), administrators see a warning on every Literature screen until it is fixed or confirmed on **Tools / Status**.
+**Staging and production.** Pushing a staging database to production copies the literature tables and options like any other WordPress data, replacing production's orders. Exclude the `bmlt_literature_*` tables and options from database pushes. The data remembers which site URL created it: if production shows data created by staging (or the other way round), administrators see a warning on every Literature screen until it is fixed or confirmed on **Tools / Status**.
 
 To copy something from staging to production **on purpose**, export the catalog JSON (Import / Export) or download a full backup (Tools / Status) on staging, then import/restore it on production. Restores show a summary and require typing RESTORE; production's own SMTP password is kept.
 
-Upgrading from 1.0: all database data is copied into JSON automatically the first time 2.0 runs. The old tables are left untouched; once you have checked everything, you can delete them from **Tools / Status**.
+**Upgrading from version 6** (or 2 to 5, which kept data in JSON files in `wp-content/bmlt-literature-data` or the folder set with `BMLT_LIT_DATA_DIR`): the first time WordPress loads after the update, everything in the folder is copied into the database in one transaction. The folder is not changed. It still holds requesters' contact details, so once you have checked the orders, catalog and settings, delete it with **Tools / Status → Delete the old data folder**. If a file in it is damaged and its `.bak` copy is too, the move stops, the dashboard names the file, and nothing changes until it is restored.
+
+**Upgrading from 1.0:** all database data is copied into the new tables automatically. The old tables are left untouched; once you have checked everything, you can delete them from **Tools / Status**.
 
 ## 2. Connecting to BMLT
 
@@ -62,7 +53,7 @@ An order for Area A is sent only to Area A's addresses. If an Area has no addres
 
 ## 5. Assigning literature workers
 
-Either give users the **Literature Worker** or **Literature Chair** role under **Users** (roles are WordPress user data and travel with database pushes), or open **Settings → Permissions** (stored in the literature data directory, so database pushes do not change them), type a username or email in **Add a literature worker**, and tick individual capabilities. To limit someone to particular Areas, tick those Areas in **Restrict to Areas**; leave all unticked to allow every Area. Restricted users cannot edit the shared catalog. Only site administrators can change permissions.
+Either give users the **Literature Worker** or **Literature Chair** role under **Users** (roles are WordPress user data and travel with database pushes), or open **Settings → Permissions** (stored in the plugin's permissions table), type a username or email in **Add a literature worker**, and tick individual capabilities. To limit someone to particular Areas, tick those Areas in **Restrict to Areas**; leave all unticked to allow every Area. Restricted users cannot edit the shared catalog. Only site administrators can change permissions.
 
 ## 6. Adding literature
 
@@ -126,7 +117,7 @@ Each order remembers which method it was placed under. Orders are saved under an
 
 ## 10. Configuring SMTP and testing email
 
-Open **Literature → SMTP**. Choose **Use WordPress default mail** (the plugin then does not touch WordPress email at all) or **Use custom SMTP** and enter host, port, encryption (None, STARTTLS/TLS, SSL), authentication, username and password. The password is encrypted with your site's security keys and is never displayed again; leave the field blank to keep it. The encrypted password lives in the literature data directory and depends on the site's security keys, so re-enter it if you move the data to a server with different keys. For the strongest protection add this to `wp-config.php`:
+Open **Literature → SMTP**. Choose **Use WordPress default mail** (the plugin then does not touch WordPress email at all) or **Use custom SMTP** and enter host, port, encryption (None, STARTTLS/TLS, SSL), authentication, username and password. The password is encrypted with your site's security keys and is never displayed again; leave the field blank to keep it. The encrypted password is stored in the database and depends on the site's security keys, so re-enter it if you move the database to a server with different keys. For the strongest protection add this to `wp-config.php`:
 
 ```php
 define( 'BMLT_LIT_SMTP_PASSWORD', 'your-smtp-password' );
@@ -166,16 +157,16 @@ Use **Literature → Inventory** or the Inventory tab in `[bmlt_literature_manag
 
 ## 16. Updating the plugin safely
 
-Upload the new version over the old one. Data in the JSON directory is never touched by plugin updates. **Tools / Status → Verify storage and rebuild order index** can be run at any time and never removes data. Before major updates, download a full backup from Tools / Status.
+Upload the new version over the old one. Table changes are applied automatically. **Tools / Status → Verify storage** can be run at any time and never removes data. Before major updates, download a full backup from Tools / Status.
 
 ## 17. Tools / Status
 
-Shows the data directory and whether it is writable, file counts and sizes, which site created the data, BMLT server and cache state, configured Areas, item/inventory/order counts and email configuration (never passwords). Tools: **Download full backup**, **Restore from a full backup**, **Refresh BMLT Data**, **Clear and rebuild BMLT cache**, **Verify storage and rebuild order index**, and (after upgrading from 1.0) **Re-run migration** and **Delete old version 1.0 database tables**.
+Shows the plugin's tables, their size and whether they support transactions (InnoDB), any database error, which site created the data, BMLT server and cache state, configured Areas, item/inventory/order counts and email configuration (never passwords). Tools: **Download full backup**, **Restore from a full backup**, **Refresh BMLT Data**, **Clear and rebuild BMLT cache**, **Verify storage**, **Delete the old data folder** (after upgrading from version 6), and (after upgrading from 1.0) **Re-run migration** and **Delete old version 1.0 database tables**.
 
 ## 18. Privacy
 
-Only the meeting, contact name, phone, email, notes and items are stored (in the protected data directory), plus a one-way hash of the IP address for spam protection. The plugin registers with **Tools → Export Personal Data** and **Erase Personal Data**; erasing anonymizes contact details while keeping item and total information for literature accounting. Suggested privacy-policy text is added under **Settings → Privacy**.
+Only the meeting, contact name, phone, email, notes and items are stored (in the plugin's database tables), plus a one-way hash of the IP address for spam protection. The plugin registers with **Tools → Export Personal Data** and **Erase Personal Data**; erasing anonymizes contact details while keeping item and total information for literature accounting. Suggested privacy-policy text is added under **Settings → Privacy**.
 
 ## 19. Uninstalling
 
-Deactivation never deletes data. Deleting the plugin removes data (the JSON data directory and any leftover 1.0 tables) only if **Settings → Advanced → Delete plugin data when uninstalling** was turned on.
+Deactivation never deletes data. Deleting the plugin removes data (its tables and options, a leftover version 6 data folder and any leftover 1.0 tables) only if **Settings → Advanced → Delete plugin data when uninstalling** was turned on.

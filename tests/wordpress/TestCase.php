@@ -10,7 +10,8 @@
  * - Users: administrator; Literature Worker and Literature Chair (roles); a worker restricted to Riverside;
  *   a subscriber granted only "Manage settings" on the Permissions tab; a plain subscriber.
  *
- * Every test has its own empty data directory, its own fake-BMLT request log and its own mailbox.
+ * Every test runs in a database transaction that is rolled back afterwards (WordPress's test case), and has its
+ * own fake-BMLT request log and its own mailbox.
  */
 
 namespace BmltLitTest;
@@ -21,7 +22,7 @@ use BMLT_Lit\Inventory;
 use BMLT_Lit\Migrator;
 use BMLT_Lit\Permissions;
 use BMLT_Lit\Settings;
-use BMLT_Lit\Store;
+use BMLT_Lit\Db;
 
 /**
  * Thrown instead of redirecting (wp_redirect would exit).
@@ -84,7 +85,7 @@ abstract class TestCase extends \WP_UnitTestCase {
 	protected $items = array();
 
 	/**
-	 * This test's data directory.
+	 * Where this test's version 6 data folder would be (created only by tests that need one).
 	 *
 	 * @var string
 	 */
@@ -104,6 +105,7 @@ abstract class TestCase extends \WP_UnitTestCase {
 
 	public function set_up() {
 		parent::set_up();
+		$GLOBALS['bmlt_lit_test_transaction'] = true;
 		$this->dir                          = sys_get_temp_dir() . '/bmlt-lit-test-' . getmypid() . '-' . wp_generate_password( 8, false, false );
 		$GLOBALS['bmlt_lit_test_data_dir'] = $this->dir;
 		self::$bmlt_requests                = array();
@@ -115,15 +117,19 @@ abstract class TestCase extends \WP_UnitTestCase {
 
 		delete_transient( 'bmlt_lit_init_attempt' );
 		Migrator::maybe_initialize();
-		$this->assertTrue( Store::exists( Settings::DOC ), 'the data store was initialized' );
+		$this->assertTrue( Settings::initialized(), 'the literature data was initialized' );
+		$this->assertSame( array(), Db::missing_tables() );
 		$this->configure_site();
 	}
 
 	public function tear_down() {
+		$GLOBALS['wpdb']->suppress_errors( false );
 		remove_filter( 'pre_http_request', array( __CLASS__, 'fake_http' ), 10 );
 		remove_filter( 'wp_redirect', array( __CLASS__, 'throw_redirect' ), 1 );
 		self::rrmdir( $this->dir );
-		$GLOBALS['bmlt_lit_test_data_dir'] = '';
+		$GLOBALS['bmlt_lit_test_data_dir']  = '';
+		$GLOBALS['bmlt_lit_test_transaction'] = false;
+		$GLOBALS['bmlt_lit_test_lock_wait']   = 0;
 		self::reset_plugin_state();
 		$_POST = array();
 		$_GET  = array();
@@ -135,9 +141,8 @@ abstract class TestCase extends \WP_UnitTestCase {
 	 * Forget everything the plugin cached in static properties.
 	 */
 	public static function reset_plugin_state() {
-		Store::flush_cache();
-		Settings::flush();
-		self::set_static( Store::class, 'read_errors', array() );
+		Db::flush_caches();
+		self::set_static( Db::class, 'errors', array() );
 		self::set_static( \BMLT_Lit\Front\Front::class, 'state', array( 'errors' => array(), 'values' => array() ) );
 	}
 
@@ -294,6 +299,56 @@ abstract class TestCase extends \WP_UnitTestCase {
 	 */
 	public static function throw_redirect( $location, $status ) {
 		throw new Redirected( $location, $status );
+	}
+
+	/**
+	 * Every row of one of the plugin's tables, for comparing before and after.
+	 *
+	 * @param string $short Table short name.
+	 * @return array[]
+	 */
+	protected static function dump( $short ) {
+		global $wpdb;
+		$t = Db::table( $short );
+		return $wpdb->get_results( "SELECT * FROM {$t} ORDER BY 1, 2", ARRAY_A ); // phpcs:ignore WordPress.DB
+	}
+
+	/**
+	 * Everything the plugin stores in the database (tables and options), as text.
+	 *
+	 * @return string
+	 */
+	protected static function everything_stored() {
+		global $wpdb;
+		$out = array();
+		foreach ( Db::TABLES as $short ) {
+			$out[ $short ] = self::dump( $short );
+		}
+		$out['options'] = $wpdb->get_results( "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE 'bmlt\\_literature\\_%'", ARRAY_A ); // phpcs:ignore WordPress.DB
+		return (string) wp_json_encode( $out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+	}
+
+	/**
+	 * After a test that had to commit (CREATE or DROP TABLE end the test's transaction): put the database back the
+	 * way WordPress booted it — the tables empty, the data initialized afresh — and commit that.
+	 */
+	public static function reset_committed_data() {
+		global $wpdb;
+		$GLOBALS['bmlt_lit_test_transaction'] = false;
+		$GLOBALS['bmlt_lit_test_data_dir']    = ''; // Initialize afresh, not from a test's version 6 folder.
+		Db::install();
+		foreach ( Db::TABLES as $short ) {
+			$wpdb->query( 'DELETE FROM ' . Db::table( $short ) ); // phpcs:ignore WordPress.DB
+		}
+		$wpdb->query( 'INSERT INTO ' . Db::table( 'counters' ) . " (name, value) VALUES ('lock', 0), ('order', 1), ('item', 1)" ); // phpcs:ignore WordPress.DB
+		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE (option_name LIKE 'bmlt\\_literature\\_%' AND option_name <> 'bmlt_literature_db_version') OR option_name LIKE '\\_transient\\_%bmlt\\_lit\\_%'" ); // phpcs:ignore WordPress.DB
+		$wpdb->query( 'COMMIT' );
+		wp_cache_flush();
+		self::reset_plugin_state();
+		\BMLT_Lit\Migrator::maybe_initialize();
+		$wpdb->query( 'COMMIT' );
+		$GLOBALS['bmlt_lit_test_transaction'] = true;
+		\BMLT_Lit\Permissions::install_roles();
 	}
 
 	/**

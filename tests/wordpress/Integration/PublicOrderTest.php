@@ -291,11 +291,7 @@ class PublicOrderTest extends TestCase {
 		$this->assertStringContainsString( 'That order confirmation link is invalid or has expired.', do_shortcode( '[bmlt_literature_order]' ) );
 
 		// Age the order by 31 days.
-		$idx   = \BMLT_Lit\Store::get( Orders::INDEX );
-		$month = 'orders/' . $idx['orders'][ $r['order']->id ]['month'];
-		$doc   = \BMLT_Lit\Store::get( $month );
-		$doc['orders'][ $r['order']->id ]['created_at'] = gmdate( 'Y-m-d H:i:s', time() - 31 * DAY_IN_SECONDS );
-		\BMLT_Lit\Store::put( $month, $doc );
+		$GLOBALS['wpdb']->update( \BMLT_Lit\Db::table( 'orders' ), array( 'created_at' => gmdate( 'Y-m-d H:i:s', time() - 31 * DAY_IN_SECONDS ) ), array( 'id' => $r['order']->id ) );
 		$this->assertNull( Orders::get_by_access( $q['bmlt_lit_order'], $q['bmlt_lit_key'] ) );
 	}
 

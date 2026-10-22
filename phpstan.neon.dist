@@ -12,8 +12,7 @@ parameters:
     dynamicConstantNames:
         - BMLT_LIT_DATA_DIR
         - BMLT_LIT_SMTP_PASSWORD
-        - BMLT_LIT_LOCK_METHOD
         - WP_DEBUG
         - WP_DEBUG_LOG
-    # Files are written, renamed and re-read: calls with the same arguments may return different results.
+    # Queries and files are re-read: calls with the same arguments may return different results.
     rememberPossiblyImpureFunctionValues: false

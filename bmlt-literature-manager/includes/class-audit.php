@@ -1,9 +1,9 @@
 <?php
 /**
- * Audit log (monthly JSON files under audit/).
+ * Audit log (the audit table).
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -16,7 +16,12 @@ defined( 'ABSPATH' ) || exit;
 class Audit {
 
 	/**
-	 * Write an audit entry to audit/YYYY-MM.json.php.
+	 * Name of the audit documents in backups ("audit/YYYY-MM").
+	 */
+	const DOC_PREFIX = 'audit/';
+
+	/**
+	 * Write an audit entry. Inside a transaction it is saved (or rolled back) together with the change it records.
 	 *
 	 * @param string $action      Action key (e.g. inventory_adjusted).
 	 * @param string $object_type Object type (item|inventory|order|settings|import|user).
@@ -28,39 +33,55 @@ class Audit {
 	 * @return true|\WP_Error
 	 */
 	public static function log( $action, $object_type, $object_id = 0, $old = null, $new = null, $area_id = 0, $note = '' ) {
-		$now   = Helpers::now_gmt();
-		$entry = array(
-			'id'          => (int) round( microtime( true ) * 1000 ),
-			'area_id'     => absint( $area_id ),
-			'user_id'     => get_current_user_id(),
-			'action'      => substr( sanitize_key( $action ), 0, 64 ),
-			'object_type' => substr( sanitize_key( $object_type ), 0, 32 ),
-			'object_id'   => absint( $object_id ),
-			'old_value'   => $old,
-			'new_value'   => $new,
-			'note'        => Helpers::limit( sanitize_textarea_field( (string) $note ), 2000 ),
-			'created_at'  => $now,
+		$row = self::row(
+			array(
+				'area_id'     => absint( $area_id ),
+				'user_id'     => get_current_user_id(),
+				'action'      => substr( sanitize_key( $action ), 0, 64 ),
+				'object_type' => substr( sanitize_key( $object_type ), 0, 32 ),
+				'object_id'   => absint( $object_id ),
+				'old_value'   => $old,
+				'new_value'   => $new,
+				'note'        => Helpers::limit( sanitize_textarea_field( (string) $note ), 2000 ),
+				'created_at'  => Helpers::now_gmt(),
+			)
 		);
-		$doc = 'audit/' . substr( $now, 0, 7 );
-		return Store::tx(
-			static function () use ( $doc, $entry ) {
-				$d = Store::get( $doc, array( 'entries' => array() ) );
-				if ( ! isset( $d['entries'] ) || ! is_array( $d['entries'] ) ) {
-					$d['entries'] = array();
-				}
-				$d['entries'][] = $entry;
-				return Store::put( $doc, $d );
+		return Db::tx(
+			static function () use ( $row ) {
+				Db::insert( 'audit', $row );
+				return true;
 			}
 		);
 	}
 
 	/**
-	 * Fetch recent entries (newest first), scanning at most the last 24 monthly files.
+	 * Table row from an entry (values as JSON).
+	 *
+	 * @param array $e Entry (Schema::audit() shape).
+	 * @return array
+	 */
+	public static function row( array $e ) {
+		return array(
+			'area_id'     => (int) $e['area_id'],
+			'user_id'     => (int) $e['user_id'],
+			'action'      => (string) $e['action'],
+			'object_type' => (string) $e['object_type'],
+			'object_id'   => (int) $e['object_id'],
+			'old_value'   => null === $e['old_value'] ? null : wp_json_encode( $e['old_value'] ),
+			'new_value'   => null === $e['new_value'] ? null : wp_json_encode( $e['new_value'] ),
+			'note'        => (string) $e['note'],
+			'created_at'  => (string) $e['created_at'],
+		);
+	}
+
+	/**
+	 * Fetch recent entries (newest first).
 	 *
 	 * @param array $args area_ids, object_type, object_id, actions, limit.
-	 * @return object[]
+	 * @return object[] Values as JSON strings.
 	 */
 	public static function recent( array $args = array() ) {
+		global $wpdb;
 		$args    = wp_parse_args(
 			$args,
 			array(
@@ -71,35 +92,35 @@ class Audit {
 				'limit'       => 25,
 			)
 		);
-		$limit   = max( 1, min( 500, (int) $args['limit'] ) );
-		$areas   = is_array( $args['area_ids'] ) ? array_merge( array_map( 'absint', $args['area_ids'] ), array( 0 ) ) : null;
-		$actions = array_map( 'sanitize_key', (array) $args['actions'] );
-		$out     = array();
-		$months  = array_reverse( Store::names( 'audit' ) );
-		foreach ( array_slice( $months, 0, 24 ) as $doc ) {
-			$d       = Store::get( $doc, array( 'entries' => array() ) );
-			$entries = isset( $d['entries'] ) && is_array( $d['entries'] ) ? array_reverse( $d['entries'] ) : array();
-			foreach ( $entries as $e ) {
-				if ( null !== $areas && ! in_array( (int) $e['area_id'], $areas, true ) ) {
-					continue;
-				}
-				if ( '' !== $args['object_type'] && $e['object_type'] !== sanitize_key( $args['object_type'] ) ) {
-					continue;
-				}
-				if ( $args['object_id'] && (int) $e['object_id'] !== absint( $args['object_id'] ) ) {
-					continue;
-				}
-				if ( $actions && ! in_array( $e['action'], $actions, true ) ) {
-					continue;
-				}
-				// Views expect JSON strings (as stored in v1.0).
-				$e['old_value'] = null === $e['old_value'] ? null : wp_json_encode( $e['old_value'] );
-				$e['new_value'] = null === $e['new_value'] ? null : wp_json_encode( $e['new_value'] );
-				$out[]          = (object) $e;
-				if ( count( $out ) >= $limit ) {
-					return $out;
-				}
+		$where   = array( '1=1' );
+		$params  = array();
+		if ( is_array( $args['area_ids'] ) ) {
+			$areas   = array_values( array_unique( array_merge( array_map( 'absint', $args['area_ids'] ), array( 0 ) ) ) );
+			$where[] = 'area_id IN (' . implode( ',', array_fill( 0, count( $areas ), '%d' ) ) . ')';
+			$params  = array_merge( $params, $areas );
+		}
+		if ( '' !== $args['object_type'] ) {
+			$where[]  = 'object_type = %s';
+			$params[] = sanitize_key( $args['object_type'] );
+		}
+		if ( $args['object_id'] ) {
+			$where[]  = 'object_id = %d';
+			$params[] = absint( $args['object_id'] );
+		}
+		$actions = array_values( array_filter( array_map( 'sanitize_key', (array) $args['actions'] ) ) );
+		if ( $actions ) {
+			$where[] = 'action IN (' . implode( ',', array_fill( 0, count( $actions ), '%s' ) ) . ')';
+			$params  = array_merge( $params, $actions );
+		}
+		$params[] = max( 1, min( 500, (int) $args['limit'] ) );
+		$t        = Db::table( 'audit' );
+		$sql      = "SELECT * FROM {$t} WHERE " . implode( ' AND ', $where ) . ' ORDER BY id DESC LIMIT %d';
+		$out      = array();
+		foreach ( Db::rows( $wpdb->prepare( $sql, $params ) ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built above.
+			foreach ( array( 'id', 'area_id', 'user_id', 'object_id' ) as $k ) {
+				$r[ $k ] = (int) $r[ $k ];
 			}
+			$out[] = (object) $r;
 		}
 		return $out;
 	}

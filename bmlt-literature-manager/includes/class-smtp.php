@@ -3,7 +3,7 @@
  * Optional SMTP transport.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -199,7 +199,7 @@ class Smtp {
 	 * Sanitize and save SMTP settings from a form submission.
 	 *
 	 * @param array $raw Raw (unslashed) input.
-	 * @return array Saved settings.
+	 * @return array|\WP_Error Saved settings.
 	 */
 	public static function save( array $raw ) {
 		$current = Settings::smtp();
@@ -225,14 +225,12 @@ class Smtp {
 			$new['password'] = self::encrypt( str_replace( array( "\r", "\n" ), '', (string) $raw['password'] ) );
 		}
 
-		Settings::update( Settings::SMTP, $new, false );
-
 		$log_old             = $current;
 		$log_new             = $new;
 		$log_old['password'] = '' !== (string) $current['password'] ? '(set)' : '';
 		$log_new['password'] = '' !== (string) $new['password'] ? '(set)' : '';
-		Audit::log( 'settings_changed', 'settings', 0, array( 'smtp' => $log_old ), array( 'smtp' => $log_new ) );
-		return $new;
+		$saved               = Settings::save( Settings::SMTP, $new, array( 'smtp' => $log_old ), array( 'smtp' => $log_new ) );
+		return is_wp_error( $saved ) ? $saved : $new;
 	}
 
 	/**

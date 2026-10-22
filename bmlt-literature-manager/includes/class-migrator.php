@@ -1,9 +1,10 @@
 <?php
 /**
- * Store initialization and migration from v1.0 (database tables + options).
+ * Initialization of the literature data, and moving earlier versions' data into it: the JSON data folder of
+ * versions 2 to 6, or the database tables and options of version 1.0.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -11,7 +12,8 @@ namespace BMLT_Lit;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Creates the JSON store and copies v1.0 database data into it. Never modifies the legacy tables.
+ * Creates the tables and copies earlier versions' data into them, in one transaction. Never modifies the earlier
+ * data: the version 6 folder and the version 1.0 tables are only removed on request.
  */
 class Migrator {
 
@@ -58,78 +60,136 @@ class Migrator {
 	}
 
 	/**
-	 * Create the store on first run (migrating v1.0 data when present). Runs on init and activation.
+	 * Create the tables and initialize the data on first run (moving earlier versions' data in when present).
+	 * Runs on init and activation; cheap once done.
 	 */
 	public static function maybe_initialize() {
-		if ( Store::exists( Settings::DOC ) ) {
-			self::maybe_upgrade();
+		$ready = Db::maybe_install();
+		if ( is_wp_error( $ready ) ) {
+			set_transient( 'bmlt_lit_init_error', $ready->get_error_message(), HOUR_IN_SECONDS );
 			return;
 		}
-		if ( get_transient( 'bmlt_lit_init_attempt' ) ) {
-			return; // Avoid retrying on every request when the directory is not writable.
+		if ( Settings::initialized() || get_transient( 'bmlt_lit_init_attempt' ) ) {
+			return; // Done, or another request is at it (or failed a moment ago: not on every request).
 		}
 		set_transient( 'bmlt_lit_init_attempt', 1, MINUTE_IN_SECONDS );
-		if ( is_wp_error( Store::ensure_dir() ) ) {
-			return;
-		}
-		if ( self::legacy_present() ) {
+		if ( Legacy_Files::present() ) {
+			$result = self::migrate_files();
+		} elseif ( self::legacy_present() ) {
 			$result = self::migrate();
-			if ( is_wp_error( $result ) ) {
-				Helpers::log( 'Automatic migration failed.', array( 'error' => $result->get_error_message() ) );
-			}
-			return;
-		}
-		Store::tx(
-			static function () {
-				if ( Store::exists( Settings::DOC ) ) {
+		} else {
+			$result = Db::tx(
+				static function () {
+					if ( ! Settings::initialized() ) {
+						Settings::save_meta( array() );
+					}
 					return true;
 				}
-				return Store::put(
-					Settings::DOC,
-					Settings::with_meta(
-						array(
-							'general'   => array(),
-							'bmlt'      => array(),
-							'areas'     => array(),
-							'smtp'      => array(),
-							'templates' => array(),
-						)
-					)
-				);
-			}
-		);
+			);
+		}
+		if ( is_wp_error( $result ) && 'bmlt_lit_initialized' !== $result->get_error_code() ) {
+			Helpers::log( 'The literature data could not be initialized.', array( 'error' => $result->get_error_message() ) );
+			set_transient( 'bmlt_lit_init_error', $result->get_error_message(), DAY_IN_SECONDS );
+			return;
+		}
+		delete_transient( 'bmlt_lit_init_error' );
 		delete_transient( 'bmlt_lit_init_attempt' );
 	}
 
 	/**
-	 * Bring an existing data directory up to the current storage layout (once per change of Settings::SCHEMA).
+	 * Why the data could not be initialized (shown to administrators), or ''.
 	 *
-	 * Schema 3 (6.3.0): previous versions are kept as "<name>.bak.json.php" instead of "<name>.json.php.bak".
+	 * @return string
 	 */
-	public static function maybe_upgrade() {
-		$meta = Settings::meta();
-		if ( ( isset( $meta['schema'] ) && (int) $meta['schema'] >= Settings::SCHEMA ) || get_transient( 'bmlt_lit_upgrade_attempt' ) ) {
-			return;
-		}
-		set_transient( 'bmlt_lit_upgrade_attempt', 1, 10 * MINUTE_IN_SECONDS ); // Not on every request if the directory is read-only.
-		Store::upgrade_layout();
-		$done = Store::tx(
-			static function () {
-				$doc                   = Settings::with_meta( Store::get( Settings::DOC ) );
-				$doc['meta']['schema'] = Settings::SCHEMA;
-				return Store::put( Settings::DOC, $doc );
-			}
-		);
-		if ( true === $done ) {
-			delete_transient( 'bmlt_lit_upgrade_attempt' );
-		}
-		Settings::flush();
+	public static function init_error() {
+		return (string) get_transient( 'bmlt_lit_init_error' );
 	}
 
 	/**
-	 * Copy all v1.0 database data into the JSON store.
+	 * Move the JSON data folder of version 6 (or earlier) into the database. The files are left untouched.
 	 *
-	 * Existing JSON documents are snapshotted first and then replaced by the migrated data.
+	 * @return array|\WP_Error Counts { items, inventory, orders, audit, users }.
+	 */
+	public static function migrate_files() {
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		}
+		try {
+			$raw = Legacy_Files::documents();
+		} catch ( \RuntimeException $e ) {
+			return new \WP_Error( 'bmlt_lit_files', $e->getMessage() );
+		}
+		try {
+			$cache = Legacy_Files::read( 'cache/bmlt' ); // The last BMLT answers, so ordering works even if BMLT is down now.
+		} catch ( \RuntimeException $e ) {
+			$cache = null; // A cache: BMLT is simply asked again.
+		}
+		$valid = Import_Export::validate_backup(
+			array(
+				'format'    => Import_Export::BACKUP_FORMAT,
+				'version'   => Import_Export::BACKUP_VERSION,
+				'documents' => $raw,
+			)
+		);
+		if ( is_wp_error( $valid ) ) {
+			return $valid;
+		}
+		$old  = isset( $raw[ Settings::DOC ]['meta'] ) && is_array( $raw[ Settings::DOC ]['meta'] ) ? $raw[ Settings::DOC ]['meta'] : array();
+		$meta = array();
+		foreach ( array( 'created', 'migrated_from_db', 'adopted', 'restored_at' ) as $k ) {
+			if ( isset( $old[ $k ] ) && is_numeric( $old[ $k ] ) ) {
+				$meta[ $k ] = (int) $old[ $k ];
+			}
+		}
+		foreach ( array( 'site_url', 'restored_from' ) as $k ) {
+			if ( isset( $old[ $k ] ) && is_string( $old[ $k ] ) ) {
+				$meta[ $k ] = esc_url_raw( $old[ $k ] );
+			}
+		}
+		if ( isset( $old['store_id'] ) && is_string( $old['store_id'] ) ) {
+			$meta['store_id'] = preg_replace( '/[^A-Za-z0-9]/', '', $old['store_id'] );
+		}
+		$meta['schema']              = Settings::SCHEMA;
+		$meta['migrated_from_files'] = time();
+		$meta['files_dir']           = Legacy_Files::dir();
+		$counts                      = $valid['counts'];
+
+		return Db::tx(
+			static function () use ( $valid, $meta, $counts, $cache ) {
+				if ( Settings::initialized() ) {
+					return new \WP_Error( 'bmlt_lit_initialized', 'Already initialized.' );
+				}
+				Import_Export::write_documents( $valid['documents'] );
+				foreach ( Bmlt_Client::cache_sections() as $section ) {
+					if ( isset( $cache[ $section ] ) && is_array( $cache[ $section ] ) ) {
+						Db::set_option( Bmlt_Client::cache_option( $section ), $cache[ $section ], false );
+					}
+				}
+				Settings::save_meta( $meta );
+				Audit::log( 'settings_changed', 'import', 0, null, array( 'moved_to_database' => $counts ) );
+				return $counts;
+			}
+		);
+	}
+
+	/**
+	 * Delete the version 6 data folder (after its data was moved into the database).
+	 *
+	 * @return true|\WP_Error
+	 */
+	public static function remove_files() {
+		if ( empty( Settings::meta()['migrated_from_files'] ) ) {
+			return new \WP_Error( 'bmlt_lit_not_migrated', __( 'The old data folder can only be removed after its data was moved into the database.', 'bmlt-literature-manager' ) );
+		}
+		if ( ! Legacy_Files::remove() ) {
+			/* translators: %s: folder. */
+			return new \WP_Error( 'bmlt_lit_remove_files', sprintf( __( 'The old data folder could not be removed completely: %s. Remove it with your hosting file manager.', 'bmlt-literature-manager' ), Legacy_Files::dir() ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Copy all v1.0 database data into the plugin's tables, replacing what they hold (one transaction).
 	 *
 	 * @return array|\WP_Error Summary counts.
 	 */
@@ -137,13 +197,6 @@ class Migrator {
 		global $wpdb;
 		if ( ! self::legacy_present() ) {
 			return new \WP_Error( 'bmlt_lit_no_legacy', __( 'No version 1.0 database data was found.', 'bmlt-literature-manager' ) );
-		}
-		$ready = Store::ensure_dir();
-		if ( is_wp_error( $ready ) ) {
-			return $ready;
-		}
-		if ( Store::exists( Settings::DOC ) ) {
-			Store::snapshot( 'pre-migration' );
 		}
 		if ( function_exists( 'set_time_limit' ) ) {
 			@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
@@ -168,8 +221,7 @@ class Migrator {
 		foreach ( $raw as $k => $v ) {
 			$raw[ $k ] = is_array( $v ) ? $v : array();
 		}
-		$settings                             = Settings::with_meta( Schema::settings( $raw ) );
-		$settings['meta']['migrated_from_db'] = time();
+		$settings = Schema::settings( $raw );
 
 		// Catalog.
 		$catalog = array(
@@ -299,31 +351,28 @@ class Migrator {
 		}
 		$summary['users'] = count( $grants['users'] );
 
-		$written = Store::tx(
-			static function () use ( $settings, $catalog, $inventory, $months, $audit, $grants ) {
-				Store::put( Settings::DOC, $settings );
-				Store::put( Catalog::DOC, $catalog );
-				Store::put( Inventory::DOC, $inventory );
-				Store::put( Permissions::DOC, $grants );
-				foreach ( $months as $doc => $data ) {
-					Store::put( $doc, $data );
-				}
-				foreach ( $audit as $doc => $data ) {
-					Store::put( $doc, $data );
-				}
+		$docs = array(
+			Settings::DOC    => $settings,
+			Catalog::DOC     => $catalog,
+			Inventory::DOC   => $inventory,
+			Permissions::DOC => $grants,
+		) + $months + $audit;
+
+		$written = Db::tx(
+			static function () use ( $docs, $summary ) {
+				Import_Export::write_documents( $docs );
+				$meta                     = Settings::complete_meta( Settings::meta() );
+				$meta['migrated_from_db'] = time();
+				Settings::save_meta( $meta );
+				Audit::log( 'settings_changed', 'import', 0, null, array( 'migrated_from_database' => $summary ) );
 				return true;
 			}
 		);
 		if ( is_wp_error( $written ) ) {
 			return $written;
 		}
-		$index = Orders::rebuild_index();
-		if ( is_wp_error( $index ) ) {
-			return $index;
-		}
 		Settings::flush();
 		delete_transient( 'bmlt_lit_init_attempt' );
-		Audit::log( 'settings_changed', 'import', 0, null, array( 'migrated_from_database' => $summary ) );
 		return $summary;
 	}
 
@@ -350,7 +399,7 @@ class Migrator {
 		global $wpdb;
 		$meta = Settings::meta();
 		if ( empty( $meta['migrated_from_db'] ) ) {
-			return new \WP_Error( 'bmlt_lit_not_migrated', __( 'Legacy data can only be removed after it has been migrated to JSON storage.', 'bmlt-literature-manager' ) );
+			return new \WP_Error( 'bmlt_lit_not_migrated', __( 'Legacy data can only be removed after it has been migrated.', 'bmlt-literature-manager' ) );
 		}
 		foreach ( self::LEGACY_TABLES as $t ) {
 			$name = self::table( $t );

@@ -1,6 +1,6 @@
 /**
  * BMLT Literature Manager — admin enhancements (vanilla JS, no dependencies).
- * @version 6.3.0
+ * @version 7.0.0
  */
 ( function () {
 	'use strict';

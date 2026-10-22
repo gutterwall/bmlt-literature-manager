@@ -7,7 +7,6 @@ namespace BmltLitTest;
 
 use BMLT_Lit\Orders;
 use BMLT_Lit\Privacy;
-use BMLT_Lit\Store;
 
 class PrivacyTest extends TestCase {
 
@@ -31,7 +30,6 @@ class PrivacyTest extends TestCase {
 	public function test_erase_removes_contact_details_everywhere_and_keeps_accounting() {
 		$pat   = $this->place_order( $this->order_post( array( 'BT' => 2 ), array( 'bmlt_lit_notes' => 'Ring 555-0123 at the side door' ) ) )['order'];
 		$other = $this->place_order( $this->order_post( array( 'IP1' => 1 ), array( 'bmlt_lit_email' => 'other@example.org', 'bmlt_lit_name' => 'Other Person', 'bmlt_lit_phone' => '555-0177' ) ) )['order'];
-		Store::snapshot( 'before-erase' );
 
 		$r = Privacy::erase( 'pat@example.org' );
 		$this->assertTrue( $r['items_removed'] );
@@ -43,24 +41,26 @@ class PrivacyTest extends TestCase {
 		$this->assertSame( 'Other Person', Orders::get( $other->id )->contact_name );
 		$this->assertSame( array(), Privacy::export( 'pat@example.org' )['data'] );
 
-		// Nothing of Pat's is left anywhere in the data directory: not in previous versions, not in snapshots.
-		$it = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $this->dir, \FilesystemIterator::SKIP_DOTS ) );
-		foreach ( $it as $f ) {
-			$raw = file_get_contents( $f->getPathname() );
-			foreach ( array( 'pat@example.org', 'Pat Example', '555-0123', 'side door' ) as $needle ) {
-				$this->assertStringNotContainsString( $needle, $raw, substr( $f->getPathname(), strlen( $this->dir ) ) . ' still holds ' . $needle );
-			}
+		// Nothing of Pat's is left anywhere the plugin stores data.
+		$stored = self::everything_stored();
+		foreach ( array( 'pat@example.org', 'Pat Example', '555-0123', 'side door' ) as $needle ) {
+			$this->assertStringNotContainsString( $needle, $stored, 'still stored: ' . $needle );
 		}
-		$this->assertStringContainsString( 'other@example.org', file_get_contents( Store::path( Orders::INDEX ) ) );
+		$this->assertStringContainsString( 'other@example.org', $stored );
 		$this->assertSame( array( 'items_removed' => false, 'items_retained' => false, 'messages' => array(), 'done' => true ), Privacy::erase( 'nobody@example.org' ) );
 	}
 
 	public function test_ip_addresses_are_never_stored() {
-		$this->place_order( $this->order_post( array( 'BT' => 1 ) ) );
-		$it = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $this->dir, \FilesystemIterator::SKIP_DOTS ) );
-		foreach ( $it as $f ) {
-			$this->assertStringNotContainsString( self::IP, file_get_contents( $f->getPathname() ) );
-		}
-		$this->assertMatchesRegularExpression( '/^[a-f0-9]{64}$/', Orders::get( 1 )->ip_hash );
+		$order = $this->place_order( $this->order_post( array( 'BT' => 1 ) ) )['order'];
+		$this->assertStringNotContainsString( self::IP, self::everything_stored() );
+		$this->assertMatchesRegularExpression( '/^[a-f0-9]{64}$/', Orders::get( $order->id )->ip_hash );
+	}
+
+	public function test_erasing_points_at_the_old_data_folder_while_it_exists() {
+		mkdir( $this->dir, 0777, true );
+		file_put_contents( $this->dir . '/settings.json.php', "<?php exit; ?>\n{}" );
+		$r = Privacy::erase( 'pat@example.org' );
+		$this->assertTrue( $r['items_retained'] );
+		$this->assertStringContainsString( $this->dir, implode( ' ', $r['messages'] ) );
 	}
 }

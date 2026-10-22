@@ -1,17 +1,11 @@
 <?php
 /**
- * Orders (JSON storage).
+ * Orders (the orders, order_items and order_notes tables).
  *
- * Layout:
- *   orders/index.json.php    { next_id, orders: { id: summary }, hashes: { submission_hash: id }, refs: { item_id: count } }
- *   orders/YYYY-MM.json.php  { orders: { id: full order incl. items + notes_log } }   (month of creation, UTC)
- *
- * The index holds only the fields needed for listing, filtering, sorting and dashboard counts, so list
- * views never have to open every month file. Every change updates the index and month file together
- * inside one locked transaction.
+ * Every change to an order, its lines, its history and the inventory it affects happens in one transaction.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -23,84 +17,47 @@ defined( 'ABSPATH' ) || exit;
  */
 class Orders {
 
-	const INDEX = 'orders/index';
-
 	/**
-	 * Fields copied into the index.
+	 * Name prefix of the order documents in backups ("orders/YYYY-MM").
 	 */
-	const INDEX_FIELDS = array( 'id', 'order_number', 'created_at', 'area_id', 'area_name', 'meeting_id', 'meeting_name', 'contact_name', 'contact_email', 'contact_phone', 'item_count', 'total', 'status', 'has_special_order' );
+	const DOC_PREFIX = 'orders/';
 
 	/**
-	 * Index document.
-	 *
-	 * @return array
+	 * Header columns (everything but the lines and the history).
 	 */
-	public static function index() {
-		$d = Store::get(
-			self::INDEX,
-			array(
-				'next_id' => 1,
-				'orders'  => array(),
-				'hashes'  => array(),
-				'refs'    => array(),
-			)
-		);
-		foreach ( array( 'orders', 'hashes', 'refs' ) as $k ) {
-			if ( ! isset( $d[ $k ] ) || ! is_array( $d[ $k ] ) ) {
-				$d[ $k ] = array();
-			}
-		}
-		if ( empty( $d['next_id'] ) ) {
-			$d['next_id'] = $d['orders'] ? max( array_map( 'intval', array_keys( $d['orders'] ) ) ) + 1 : 1;
-		}
-		return $d;
-	}
+	const COLUMNS = array( 'id', 'order_number', 'access_key', 'submission_hash', 'area_id', 'area_name', 'meeting_id', 'meeting_name', 'meeting_day', 'meeting_time', 'meeting_location', 'contact_name', 'contact_phone', 'contact_email', 'notes', 'subtotal', 'total', 'item_count', 'status', 'has_special_order', 'inventory_mode', 'inventory_state', 'ip_hash', 'created_by', 'created_at', 'updated_at', 'updated_by', 'fulfilled_at', 'fulfilled_by' );
 
 	/**
-	 * Month document name for a UTC datetime.
+	 * Line columns.
+	 */
+	const ITEM_COLUMNS = array( 'item_id', 'sku', 'name', 'description', 'quantity', 'quantity_in_stock', 'quantity_special', 'quantity_reserved', 'unit_price', 'line_total', 'stock_status', 'is_special_order' );
+
+	/**
+	 * Backup document name for a UTC datetime.
 	 *
 	 * @param string $created_at UTC datetime.
 	 * @return string
 	 */
 	public static function month_doc( $created_at ) {
-		return 'orders/' . substr( (string) $created_at, 0, 7 );
+		return self::DOC_PREFIX . substr( (string) $created_at, 0, 7 );
 	}
 
 	/**
-	 * Build an index entry from a full record.
-	 *
-	 * @param array $rec Full record.
-	 * @return array
-	 */
-	private static function index_entry( array $rec ) {
-		$e = array();
-		foreach ( self::INDEX_FIELDS as $f ) {
-			$e[ $f ] = isset( $rec[ $f ] ) ? $rec[ $f ] : '';
-		}
-		$e['month'] = substr( (string) $rec['created_at'], 0, 7 );
-		return $e;
-	}
-
-	/**
-	 * Full record array for an order ID (or null).
+	 * Header row of an order (or null).
 	 *
 	 * @param int $id Order ID.
 	 * @return array|null
 	 */
-	private static function record( $id ) {
-		$id  = absint( $id );
-		$idx = self::index();
-		if ( ! isset( $idx['orders'][ $id ] ) ) {
-			return null;
-		}
-		$month = Store::get( 'orders/' . $idx['orders'][ $id ]['month'], array( 'orders' => array() ) );
-		return isset( $month['orders'][ $id ] ) && is_array( $month['orders'][ $id ] ) ? $month['orders'][ $id ] : null;
+	private static function header_row( $id ) {
+		global $wpdb;
+		$t = Db::table( 'orders' );
+		return Db::row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", absint( $id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
 	}
 
 	/**
-	 * Header object (without items/history) from a record.
+	 * Header object (without items/history) from a row.
 	 *
-	 * @param array $rec Record.
+	 * @param array $rec Row.
 	 * @return object
 	 */
 	private static function header_obj( array $rec ) {
@@ -108,6 +65,7 @@ class Orders {
 		foreach ( array( 'id', 'area_id', 'meeting_id', 'meeting_day', 'item_count', 'has_special_order', 'created_by', 'updated_by', 'fulfilled_by' ) as $k ) {
 			$rec[ $k ] = isset( $rec[ $k ] ) ? (int) $rec[ $k ] : 0;
 		}
+		$rec['submission_hash'] = isset( $rec['submission_hash'] ) ? (string) $rec['submission_hash'] : '';
 		if ( empty( $rec['fulfilled_at'] ) ) {
 			$rec['fulfilled_at'] = null;
 		}
@@ -121,7 +79,7 @@ class Orders {
 	 * @return object|null
 	 */
 	public static function get( $id ) {
-		$rec = self::record( $id );
+		$rec = self::header_row( $id );
 		return $rec ? self::header_obj( $rec ) : null;
 	}
 
@@ -132,8 +90,13 @@ class Orders {
 	 * @return object|null
 	 */
 	public static function get_by_submission_hash( $hash ) {
-		$idx = self::index();
-		return isset( $idx['hashes'][ (string) $hash ] ) ? self::get( (int) $idx['hashes'][ (string) $hash ] ) : null;
+		global $wpdb;
+		if ( '' === (string) $hash ) {
+			return null;
+		}
+		$t  = Db::table( 'orders' );
+		$id = Db::var( $wpdb->prepare( "SELECT id FROM {$t} WHERE submission_hash = %s", (string) $hash ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+		return null === $id ? null : self::get( (int) $id );
 	}
 
 	/**
@@ -144,19 +107,15 @@ class Orders {
 	 * @return object|null
 	 */
 	public static function get_by_access( $number, $key ) {
+		global $wpdb;
 		$number = sanitize_text_field( (string) $number );
 		$key    = preg_replace( '/[^A-Za-z0-9]/', '', (string) $key );
 		if ( '' === $number || strlen( $key ) < 20 ) {
 			return null;
 		}
-		$found = 0;
-		foreach ( self::index()['orders'] as $id => $e ) {
-			if ( (string) $e['order_number'] === $number ) {
-				$found = (int) $id;
-				break;
-			}
-		}
-		$order = $found ? self::get( $found ) : null;
+		$t     = Db::table( 'orders' );
+		$found = Db::var( $wpdb->prepare( "SELECT id FROM {$t} WHERE order_number = %s ORDER BY id LIMIT 1", $number ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+		$order = null === $found ? null : self::get( (int) $found );
 		if ( ! $order || ! hash_equals( (string) $order->access_key, $key ) ) {
 			return null;
 		}
@@ -167,15 +126,54 @@ class Orders {
 	}
 
 	/**
+	 * Lines of an order as arrays, in their stored order.
+	 *
+	 * @param int $order_id Order.
+	 * @return array[]
+	 */
+	private static function item_rows( $order_id ) {
+		global $wpdb;
+		$t   = Db::table( 'order_items' );
+		$out = array();
+		foreach ( Db::rows( $wpdb->prepare( "SELECT * FROM {$t} WHERE order_id = %d ORDER BY line_no", absint( $order_id ) ) ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+			foreach ( array( 'item_id', 'quantity', 'quantity_in_stock', 'quantity_special', 'quantity_reserved', 'is_special_order' ) as $k ) {
+				$r[ $k ] = (int) $r[ $k ];
+			}
+			$line = array();
+			foreach ( self::ITEM_COLUMNS as $k ) {
+				$line[ $k ] = $r[ $k ];
+			}
+			$out[] = $line;
+		}
+		return $out;
+	}
+
+	/**
+	 * History of an order as arrays, oldest first.
+	 *
+	 * @param int $order_id Order.
+	 * @return array[]
+	 */
+	private static function note_rows( $order_id ) {
+		global $wpdb;
+		$t   = Db::table( 'order_notes' );
+		$out = array();
+		foreach ( Db::rows( $wpdb->prepare( "SELECT user_id, note_type, old_status, new_status, note, created_at FROM {$t} WHERE order_id = %d ORDER BY id", absint( $order_id ) ) ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+			$r['user_id'] = (int) $r['user_id'];
+			$out[]        = $r;
+		}
+		return $out;
+	}
+
+	/**
 	 * Items for an order.
 	 *
 	 * @param int $order_id Order.
 	 * @return object[]
 	 */
 	public static function get_items( $order_id ) {
-		$rec = self::record( $order_id );
 		$out = array();
-		foreach ( $rec && isset( $rec['items'] ) && is_array( $rec['items'] ) ? $rec['items'] : array() as $i => $it ) {
+		foreach ( self::item_rows( $order_id ) as $i => $it ) {
 			$it['id']       = $i + 1;
 			$it['order_id'] = absint( $order_id );
 			$out[]          = (object) $it;
@@ -190,10 +188,8 @@ class Orders {
 	 * @return object[]
 	 */
 	public static function get_notes( $order_id ) {
-		$rec   = self::record( $order_id );
-		$notes = $rec && isset( $rec['notes_log'] ) && is_array( $rec['notes_log'] ) ? $rec['notes_log'] : array();
-		$out   = array();
-		foreach ( array_reverse( $notes, true ) as $i => $n ) {
+		$out = array();
+		foreach ( array_reverse( self::note_rows( $order_id ), true ) as $i => $n ) {
 			$n['id'] = $i + 1;
 			$out[]   = (object) $n;
 		}
@@ -233,19 +229,12 @@ class Orders {
 	public static function add_note( $order_id, $type, $note, $old_status = '', $new_status = '' ) {
 		$order_id = absint( $order_id );
 		$entry    = self::note_entry( $type, $note, $old_status, $new_status );
-		return Store::tx(
+		return Db::tx(
 			static function () use ( $order_id, $entry ) {
-				$idx = self::index();
-				if ( ! isset( $idx['orders'][ $order_id ] ) ) {
+				if ( ! self::header_row( $order_id ) ) {
 					return new \WP_Error( 'not_found', __( 'Order not found.', 'bmlt-literature-manager' ) );
 				}
-				$doc   = 'orders/' . $idx['orders'][ $order_id ]['month'];
-				$month = Store::get( $doc, array( 'orders' => array() ) );
-				if ( ! isset( $month['orders'][ $order_id ] ) ) {
-					return new \WP_Error( 'not_found', __( 'Order not found.', 'bmlt-literature-manager' ) );
-				}
-				$month['orders'][ $order_id ]['notes_log'][] = $entry;
-				Store::put( $doc, $month );
+				Db::insert( 'order_notes', array( 'order_id' => $order_id ) + $entry );
 				return true;
 			}
 		);
@@ -261,18 +250,6 @@ class Orders {
 		$prefix = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', (string) Settings::get( 'order_prefix' ) ) );
 		$prefix = '' === $prefix ? 'LIT' : substr( $prefix, 0, 10 );
 		return $prefix . '-' . wp_date( 'Y' ) . '-' . str_pad( (string) absint( $id ), 6, '0', STR_PAD_LEFT );
-	}
-
-	/**
-	 * Item IDs referenced by any order (from the index; optionally read fresh inside a transaction).
-	 *
-	 * @param bool $fresh Unused (inside a transaction Store::get() already reads fresh).
-	 * @return int[]
-	 */
-	public static function referenced_item_ids( $fresh = false ) {
-		unset( $fresh );
-		$refs = self::index()['refs'];
-		return array_map( 'intval', array_keys( array_filter( $refs ) ) );
 	}
 
 	/**
@@ -399,7 +376,8 @@ class Orders {
 		if ( empty( $lines ) ) {
 			return new \WP_Error( 'empty', __( 'Please choose at least one literature item.', 'bmlt-literature-manager' ) );
 		}
-		$calc = self::compute( absint( $data['area_id'] ), $lines, Catalog::doc(), Inventory::doc(), Settings::general() );
+		$area_id = absint( $data['area_id'] );
+		$calc    = self::compute( $area_id, $lines, array( 'items' => Catalog::rows_for( array_keys( $lines ) ) ), Inventory::doc_for( $area_id, array_keys( $lines ) ), Settings::general() );
 		if ( is_wp_error( $calc ) ) {
 			return $calc;
 		}
@@ -439,38 +417,30 @@ class Orders {
 		}
 		$hash = (string) $data['submission_hash'];
 
-		$result = Store::tx(
+		$result = Db::tx(
 			static function () use ( $data, $area_id, $lines, $hash ) {
-				$idx = self::index();
-				if ( isset( $idx['hashes'][ $hash ] ) ) {
+				$existing = '' !== $hash ? self::get_by_submission_hash( $hash ) : null;
+				if ( $existing ) {
 					return array(
-						'order_id'  => (int) $idx['hashes'][ $hash ],
+						'order_id'  => (int) $existing->id,
 						'duplicate' => true,
 					);
 				}
 
-				$calc = self::compute( $area_id, $lines, Catalog::doc(), Inventory::doc(), Settings::general() );
+				$inv_before = Inventory::doc_for( $area_id, array_keys( $lines ) );
+				$calc       = self::compute( $area_id, $lines, array( 'items' => Catalog::rows_for( array_keys( $lines ) ) ), $inv_before, Settings::general() );
 				if ( is_wp_error( $calc ) ) {
 					return $calc;
 				}
-				$inv         = $calc['inventory'];
-				$items       = $calc['items'];
-				$sub_cents   = $calc['sub_cents'];
-				$count       = $calc['count'];
-				$has_special = $calc['has_special'];
-				$mode        = $calc['mode'];
-				foreach ( $items as $it ) {
-					$idx['refs'][ $it['item_id'] ] = ( isset( $idx['refs'][ $it['item_id'] ] ) ? (int) $idx['refs'][ $it['item_id'] ] : 0 ) + 1;
-				}
-
-				$id      = (int) $idx['next_id'];
+				$mode    = $calc['mode'];
+				$id      = Db::next_id( 'order', 'orders' );
 				$meeting = (array) $data['meeting'];
 				$now     = Helpers::now_gmt();
 				$rec     = array(
 					'id'                => $id,
 					'order_number'      => self::format_number( $id ),
 					'access_key'        => wp_generate_password( 32, false, false ),
-					'submission_hash'   => $hash,
+					'submission_hash'   => '' !== $hash ? $hash : null,
 					'area_id'           => $area_id,
 					'area_name'         => Helpers::limit( Settings::area_name( $area_id ), 255 ),
 					'meeting_id'        => absint( $meeting['id'] ),
@@ -482,11 +452,11 @@ class Orders {
 					'contact_phone'     => Helpers::limit( (string) $data['contact_phone'], 50 ),
 					'contact_email'     => Helpers::limit( (string) $data['contact_email'], 200 ),
 					'notes'             => Helpers::limit( (string) $data['notes'], 5000 ),
-					'subtotal'          => Helpers::sql_money( $sub_cents / 100 ),
-					'total'             => Helpers::sql_money( $sub_cents / 100 ),
-					'item_count'        => $count,
+					'subtotal'          => Helpers::sql_money( $calc['sub_cents'] / 100 ),
+					'total'             => Helpers::sql_money( $calc['sub_cents'] / 100 ),
+					'item_count'        => $calc['count'],
 					'status'            => 'new',
-					'has_special_order' => $has_special ? 1 : 0,
+					'has_special_order' => $calc['has_special'] ? 1 : 0,
 					'inventory_mode'    => $mode,
 					'inventory_state'   => 'untracked' === $mode ? 'untracked' : ( 'none' === $mode ? 'none' : ( 'reserve' === $mode ? 'reserved' : 'deducted' ) ),
 					'ip_hash'           => (string) $data['ip_hash'],
@@ -494,22 +464,11 @@ class Orders {
 					'created_at'        => $now,
 					'updated_at'        => $now,
 					'updated_by'        => 0,
-					'fulfilled_at'      => '',
+					'fulfilled_at'      => null,
 					'fulfilled_by'      => 0,
-					'items'             => $items,
-					'notes_log'         => array( self::note_entry( 'system', __( 'Order submitted.', 'bmlt-literature-manager' ), '', 'new' ) ),
 				);
-
-				$doc                    = self::month_doc( $now );
-				$month                  = Store::get( $doc, array( 'orders' => array() ) );
-				$month['orders'][ $id ] = $rec;
-				$idx['orders'][ $id ]   = self::index_entry( $rec );
-				$idx['hashes'][ $hash ] = $id;
-				$idx['next_id']         = $id + 1;
-
-				Store::put( $doc, $month );
-				Store::put( self::INDEX, $idx );
-				Store::put( Inventory::DOC, $inv );
+				self::insert_record( $rec, $calc['items'], array( self::note_entry( 'system', __( 'Order submitted.', 'bmlt-literature-manager' ), '', 'new' ) ) );
+				Inventory::save_changes( $inv_before, $calc['inventory'] );
 				return array(
 					'order_id'  => $id,
 					'duplicate' => false,
@@ -546,18 +505,12 @@ class Orders {
 		$area_id  = 0;
 		$effects  = array();
 
-		$result = Store::tx(
+		$result = Db::tx(
 			static function () use ( $order_id, $status, $note, &$old, &$area_id, &$effects ) {
-				$idx = self::index();
-				if ( ! isset( $idx['orders'][ $order_id ] ) ) {
+				$rec = self::header_row( $order_id );
+				if ( ! $rec ) {
 					return new \WP_Error( 'not_found', __( 'Order not found.', 'bmlt-literature-manager' ) );
 				}
-				$doc   = 'orders/' . $idx['orders'][ $order_id ]['month'];
-				$month = Store::get( $doc, array( 'orders' => array() ) );
-				if ( ! isset( $month['orders'][ $order_id ] ) ) {
-					return new \WP_Error( 'not_found', __( 'Order not found.', 'bmlt-literature-manager' ) );
-				}
-				$rec     = $month['orders'][ $order_id ];
 				$old     = (string) $rec['status'];
 				$area_id = (int) $rec['area_id'];
 				if ( $old === $status ) {
@@ -567,10 +520,11 @@ class Orders {
 					return new \WP_Error( 'final', __( 'Fulfilled and cancelled orders are final and cannot be changed. Submit a new order if needed.', 'bmlt-literature-manager' ) );
 				}
 
-				$inv     = Inventory::doc();
-				$state   = (string) $rec['inventory_state'];
-				$changed = false;
-				foreach ( (array) $rec['items'] as $it ) {
+				$items      = self::item_rows( $order_id );
+				$inv_before = Inventory::doc_for( $area_id, wp_list_pluck( $items, 'item_id' ) );
+				$inv        = $inv_before;
+				$state      = (string) $rec['inventory_state'];
+				foreach ( $items as $it ) {
 					$item_id = (int) $it['item_id'];
 					$qty_res = (int) $it['quantity_reserved'];
 					$qty_stk = (int) $it['quantity_in_stock'];
@@ -584,36 +538,34 @@ class Orders {
 							$ref['on_hand']  = max( 0, (int) $ref['on_hand'] - $qty_res );
 							$ref['reserved'] = max( 0, (int) $ref['reserved'] - $qty_res );
 							$effects[]       = sprintf( '%s: -%d', $it['sku'], $qty_res );
-							$changed         = true;
 						} elseif ( 'none' === $state && $qty_stk > 0 ) {
 							$ref['on_hand'] = max( 0, (int) $ref['on_hand'] - $qty_stk );
 							$effects[]      = sprintf( '%s: -%d', $it['sku'], $qty_stk );
-							$changed        = true;
 						}
 					} elseif ( 'cancelled' === $status ) {
 						if ( 'reserved' === $state && $qty_res > 0 ) {
 							$ref['reserved'] = max( 0, (int) $ref['reserved'] - $qty_res );
 							$effects[]       = sprintf( '%s: released %d', $it['sku'], $qty_res );
-							$changed         = true;
 						} elseif ( 'deducted' === $state && $qty_res > 0 ) {
 							$ref['on_hand'] = (int) $ref['on_hand'] + $qty_res;
 							$effects[]      = sprintf( '%s: +%d', $it['sku'], $qty_res );
-							$changed        = true;
 						}
 					}
 					unset( $ref );
 				}
 
-				$now               = Helpers::now_gmt();
-				$rec['status']     = $status;
-				$rec['updated_at'] = $now;
-				$rec['updated_by'] = get_current_user_id();
+				$now     = Helpers::now_gmt();
+				$changes = array(
+					'status'     => $status,
+					'updated_at' => $now,
+					'updated_by' => get_current_user_id(),
+				);
 				if ( 'fulfilled' === $status ) {
-					$rec['inventory_state'] = 'deducted';
-					$rec['fulfilled_at']    = $now;
-					$rec['fulfilled_by']    = get_current_user_id();
+					$changes['inventory_state'] = 'deducted';
+					$changes['fulfilled_at']    = $now;
+					$changes['fulfilled_by']    = get_current_user_id();
 				} elseif ( 'cancelled' === $status ) {
-					$rec['inventory_state'] = 'released';
+					$changes['inventory_state'] = 'released';
 				}
 				$text = sprintf(
 					/* translators: 1: old status, 2: new status. */
@@ -627,15 +579,21 @@ class Orders {
 				if ( '' !== trim( (string) $note ) ) {
 					$text .= "\n" . $note;
 				}
-				$rec['notes_log'][] = self::note_entry( 'status', $text, $old, $status );
 
-				$month['orders'][ $order_id ] = $rec;
-				$idx['orders'][ $order_id ]   = self::index_entry( $rec );
-				Store::put( $doc, $month );
-				Store::put( self::INDEX, $idx );
-				if ( $changed ) {
-					Store::put( Inventory::DOC, $inv );
-				}
+				Db::update( 'orders', $changes, array( 'id' => $order_id ) );
+				Db::insert( 'order_notes', array( 'order_id' => $order_id ) + self::note_entry( 'status', $text, $old, $status ) );
+				Inventory::save_changes( $inv_before, $inv );
+				Audit::log(
+					'order_status_changed',
+					'order',
+					$order_id,
+					array( 'status' => $old ),
+					array(
+						'status'    => $status,
+						'inventory' => $effects,
+					),
+					$area_id
+				);
 				return true;
 			}
 		);
@@ -643,17 +601,6 @@ class Orders {
 			return $result;
 		}
 
-		Audit::log(
-			'order_status_changed',
-			'order',
-			$order_id,
-			array( 'status' => $old ),
-			array(
-				'status'    => $status,
-				'inventory' => $effects,
-			),
-			$area_id
-		);
 		/**
 		 * Fires after an order status changes.
 		 *
@@ -704,96 +651,72 @@ class Orders {
 			);
 		}
 
+		global $wpdb;
 		$statuses = Helpers::order_statuses();
-		$open     = Helpers::open_statuses();
 		$status   = (string) $args['status'];
 		$special  = (string) $args['special'];
 		$meeting  = (string) $args['meeting'];
-		$rows     = array();
+		$where    = array( 'area_id IN (' . implode( ',', array_fill( 0, count( $area_ids ), '%d' ) ) . ')' );
+		$params   = $area_ids;
+		$like     = static function ( $v ) use ( $wpdb ) {
+			return '%' . $wpdb->esc_like( (string) $v ) . '%';
+		};
 
-		foreach ( self::index()['orders'] as $e ) {
-			if ( ! in_array( (int) $e['area_id'], $area_ids, true ) ) {
-				continue;
+		if ( 'open' === $status ) {
+			$open    = Helpers::open_statuses();
+			$where[] = 'status IN (' . implode( ',', array_fill( 0, count( $open ), '%s' ) ) . ')';
+			$params  = array_merge( $params, $open );
+		} elseif ( '' !== $status && isset( $statuses[ $status ] ) ) {
+			$where[]  = 'status = %s';
+			$params[] = $status;
+		}
+		if ( '1' === $special || '0' === $special ) {
+			$where[]  = 'has_special_order = %d';
+			$params[] = (int) $special;
+		}
+		if ( '' !== $args['date_from_gmt'] ) {
+			$where[]  = 'created_at >= %s';
+			$params[] = (string) $args['date_from_gmt'];
+		}
+		if ( '' !== $args['date_to_gmt'] ) {
+			$where[]  = 'created_at < %s';
+			$params[] = (string) $args['date_to_gmt'];
+		}
+		if ( '' !== $args['search'] ) {
+			$where[] = '(order_number LIKE %s OR contact_name LIKE %s OR contact_email LIKE %s OR contact_phone LIKE %s OR meeting_name LIKE %s)';
+			$params  = array_merge( $params, array_fill( 0, 5, $like( $args['search'] ) ) );
+		}
+		foreach ( array( 'contact' => 'contact_name', 'email' => 'contact_email', 'order_number' => 'order_number' ) as $arg => $col ) {
+			if ( '' !== (string) $args[ $arg ] ) {
+				$where[]  = "{$col} LIKE %s";
+				$params[] = $like( $args[ $arg ] );
 			}
-			if ( 'open' === $status ) {
-				if ( ! in_array( $e['status'], $open, true ) ) {
-					continue;
-				}
-			} elseif ( '' !== $status && isset( $statuses[ $status ] ) && $e['status'] !== $status ) {
-				continue;
+		}
+		if ( '' !== $meeting ) {
+			if ( ctype_digit( $meeting ) ) {
+				$where[]  = 'meeting_id = %d';
+				$params[] = (int) $meeting;
+			} else {
+				$where[]  = 'meeting_name LIKE %s';
+				$params[] = $like( $meeting );
 			}
-			if ( ( '1' === $special || '0' === $special ) && (int) $e['has_special_order'] !== (int) $special ) {
-				continue;
-			}
-			if ( '' !== $args['date_from_gmt'] && strcmp( (string) $e['created_at'], (string) $args['date_from_gmt'] ) < 0 ) {
-				continue;
-			}
-			if ( '' !== $args['date_to_gmt'] && strcmp( (string) $e['created_at'], (string) $args['date_to_gmt'] ) >= 0 ) {
-				continue;
-			}
-			if ( '' !== $args['search'] ) {
-				$hay = $e['order_number'] . ' ' . $e['contact_name'] . ' ' . $e['contact_email'] . ' ' . $e['contact_phone'] . ' ' . $e['meeting_name'];
-				if ( false === stripos( $hay, (string) $args['search'] ) ) {
-					continue;
-				}
-			}
-			if ( '' !== $args['contact'] && false === stripos( (string) $e['contact_name'], (string) $args['contact'] ) ) {
-				continue;
-			}
-			if ( '' !== $args['email'] && false === stripos( (string) $e['contact_email'], (string) $args['email'] ) ) {
-				continue;
-			}
-			if ( '' !== $args['order_number'] && false === stripos( (string) $e['order_number'], (string) $args['order_number'] ) ) {
-				continue;
-			}
-			if ( '' !== $meeting ) {
-				if ( ctype_digit( $meeting ) ) {
-					if ( (int) $e['meeting_id'] !== (int) $meeting ) {
-						continue;
-					}
-				} elseif ( false === stripos( (string) $e['meeting_name'], $meeting ) ) {
-					continue;
-				}
-			}
-			$rows[] = $e;
 		}
 
-		$sort = (string) $args['sort'];
-		$cmp  = static function ( $a, $b ) use ( $sort ) {
-			$newest = strcmp( (string) $b['created_at'], (string) $a['created_at'] );
-			if ( 0 === $newest ) {
-				$newest = (int) $b['id'] <=> (int) $a['id'];
-			}
-			switch ( $sort ) {
-				case 'oldest':
-					return -$newest;
-				case 'meeting':
-					$c = strnatcasecmp( (string) $a['meeting_name'], (string) $b['meeting_name'] );
-					break;
-				case 'area':
-					$c = strnatcasecmp( (string) $a['area_name'], (string) $b['area_name'] );
-					break;
-				case 'status':
-					$c = strcmp( (string) $a['status'], (string) $b['status'] );
-					break;
-				case 'total':
-					$c = (float) $b['total'] <=> (float) $a['total'];
-					break;
-				case 'number':
-					$c = (int) $b['id'] <=> (int) $a['id'];
-					break;
-				case 'contact':
-					$c = strnatcasecmp( (string) $a['contact_name'], (string) $b['contact_name'] );
-					break;
-				default:
-					return $newest;
-			}
-			return 0 !== $c ? $c : $newest;
-		};
-		usort( $rows, $cmp );
-
-		$total = count( $rows );
-		$rows  = array_slice( $rows, max( 0, (int) $args['offset'] ), max( 1, min( 1000, (int) $args['limit'] ) ) );
+		$orders = array(
+			'oldest'  => 'created_at ASC, id ASC',
+			'meeting' => 'meeting_name ASC, created_at DESC, id DESC',
+			'area'    => 'area_name ASC, created_at DESC, id DESC',
+			'status'  => 'status ASC, created_at DESC, id DESC',
+			'total'   => 'total DESC, created_at DESC, id DESC',
+			'number'  => 'id DESC',
+			'contact' => 'contact_name ASC, created_at DESC, id DESC',
+		);
+		$order_by = isset( $orders[ (string) $args['sort'] ] ) ? $orders[ (string) $args['sort'] ] : 'created_at DESC, id DESC';
+		$t        = Db::table( 'orders' );
+		$where    = implode( ' AND ', $where );
+		$total    = (int) Db::var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE {$where}", $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- table name; placeholders built above.
+		$page     = array_merge( $params, array( max( 1, min( 1000, (int) $args['limit'] ) ), max( 0, (int) $args['offset'] ) ) );
+		$rows     = Db::rows( $wpdb->prepare( "SELECT * FROM {$t} WHERE {$where} ORDER BY {$order_by} LIMIT %d OFFSET %d", $page ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- table name, placeholders and a fixed ORDER BY built above.
 		return array(
 			'orders' => array_map( array( __CLASS__, 'header_obj' ), $rows ),
 			'total'  => $total,
@@ -821,24 +744,35 @@ class Orders {
 		if ( empty( $area_ids ) ) {
 			return $out;
 		}
-		$open = Helpers::open_statuses();
-		$now  = time();
-		$d7   = gmdate( 'Y-m-d H:i:s', $now - 7 * DAY_IN_SECONDS );
-		$d30  = gmdate( 'Y-m-d H:i:s', $now - 30 * DAY_IN_SECONDS );
-		$d45  = gmdate( 'Y-m-d H:i:s', $now - 45 * DAY_IN_SECONDS );
-		foreach ( self::index()['orders'] as $e ) {
-			if ( ! in_array( (int) $e['area_id'], $area_ids, true ) ) {
-				continue;
-			}
-			++$out['total_all'];
-			$is_open = in_array( $e['status'], $open, true );
-			$out['new']     += 'new' === $e['status'] ? 1 : 0;
-			$out['ready']   += 'ready' === $e['status'] ? 1 : 0;
-			$out['open']    += $is_open ? 1 : 0;
-			$out['special'] += ( $is_open && (int) $e['has_special_order'] ) ? 1 : 0;
-			$out['last_7']  += strcmp( (string) $e['created_at'], $d7 ) >= 0 ? 1 : 0;
-			$out['last_30'] += strcmp( (string) $e['created_at'], $d30 ) >= 0 ? 1 : 0;
-			$out['last_45'] += strcmp( (string) $e['created_at'], $d45 ) >= 0 ? 1 : 0;
+		global $wpdb;
+		$open   = Helpers::open_statuses();
+		$now    = time();
+		$t      = Db::table( 'orders' );
+		$o_ph   = implode( ',', array_fill( 0, count( $open ), '%s' ) );
+		$a_ph   = implode( ',', array_fill( 0, count( $area_ids ), '%d' ) );
+		$params = array_merge(
+			$open,
+			$open,
+			array(
+				gmdate( 'Y-m-d H:i:s', $now - 7 * DAY_IN_SECONDS ),
+				gmdate( 'Y-m-d H:i:s', $now - 30 * DAY_IN_SECONDS ),
+				gmdate( 'Y-m-d H:i:s', $now - 45 * DAY_IN_SECONDS ),
+			),
+			$area_ids
+		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- table name; placeholder lists built above.
+		$r = Db::row( $wpdb->prepare( "SELECT COUNT(*) AS total_all, SUM(status = 'new') AS new_count, SUM(status = 'ready') AS ready, SUM(status IN ({$o_ph})) AS open_count, SUM(status IN ({$o_ph}) AND has_special_order = 1) AS special, SUM(created_at >= %s) AS last_7, SUM(created_at >= %s) AS last_30, SUM(created_at >= %s) AS last_45 FROM {$t} WHERE area_id IN ({$a_ph})", $params ) );
+		if ( $r ) {
+			$out = array(
+				'new'       => (int) $r['new_count'],
+				'special'   => (int) $r['special'],
+				'open'      => (int) $r['open_count'],
+				'ready'     => (int) $r['ready'],
+				'last_7'    => (int) $r['last_7'],
+				'last_30'   => (int) $r['last_30'],
+				'last_45'   => (int) $r['last_45'],
+				'total_all' => (int) $r['total_all'],
+			);
 		}
 		return $out;
 	}
@@ -849,7 +783,8 @@ class Orders {
 	 * @return int
 	 */
 	public static function count_all() {
-		return count( self::index()['orders'] );
+		$t = Db::table( 'orders' );
+		return (int) Db::var( "SELECT COUNT(*) FROM {$t}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
 	}
 
 	/**
@@ -933,157 +868,107 @@ class Orders {
 	 * @return object[]
 	 */
 	public static function for_email( $email, $page, $per ) {
-		$ids = array();
-		foreach ( self::index()['orders'] as $id => $e ) {
-			if ( '' !== (string) $email && 0 === strcasecmp( (string) $e['contact_email'], (string) $email ) ) {
-				$ids[] = (int) $id;
-			}
+		global $wpdb;
+		if ( '' === (string) $email ) {
+			return array();
 		}
-		sort( $ids );
-		$out = array();
-		foreach ( array_slice( $ids, ( max( 1, (int) $page ) - 1 ) * $per, $per ) as $id ) {
-			$o = self::get( $id );
-			if ( $o ) {
-				$out[] = $o;
-			}
-		}
-		return $out;
+		$t    = Db::table( 'orders' );
+		$rows = Db::rows( $wpdb->prepare( "SELECT * FROM {$t} WHERE LOWER(contact_email) = LOWER(%s) ORDER BY id LIMIT %d OFFSET %d", (string) $email, (int) $per, ( max( 1, (int) $page ) - 1 ) * (int) $per ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+		return array_map( array( __CLASS__, 'header_obj' ), $rows );
 	}
 
 	/**
-	 * Anonymize all orders for an email address (privacy eraser): in the order files, their previous versions and
-	 * the backup snapshots. Items and totals are kept for literature accounting.
+	 * Anonymize all orders for an email address (privacy eraser). Items and totals are kept for literature
+	 * accounting.
 	 *
 	 * @param string $email Email.
 	 * @return int Orders anonymized.
 	 */
 	public static function anonymize_by_email( $email ) {
+		global $wpdb;
 		$email = (string) $email;
 		if ( '' === $email ) {
 			return 0;
 		}
-		$count   = 0;
-		$touched = array();
-		$result  = Store::tx(
-			static function () use ( $email, &$count, &$touched ) {
-				$idx    = self::index();
-				$months = array();
-				foreach ( $idx['orders'] as $e ) {
-					if ( 0 === strcasecmp( (string) $e['contact_email'], $email ) ) {
-						$doc = 'orders/' . $e['month'];
-						if ( ! isset( $months[ $doc ] ) ) {
-							$months[ $doc ] = Store::get( $doc, array( 'orders' => array() ) );
-						}
-					}
-				}
-				foreach ( $months as $doc => $data ) {
-					Store::put( $doc, self::scrub_orders( $data, $email ) );
-				}
-				$idx   = self::scrub_orders( $idx, $email, $count );
-				if ( ! $count ) {
-					return true;
-				}
-				Store::put( self::INDEX, $idx );
-				$touched = array_merge( array_keys( $months ), array( self::INDEX ) );
-				return true;
+		$result = Db::tx(
+			static function () use ( $email, $wpdb ) {
+				$t = Db::table( 'orders' );
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+				return Db::q( $wpdb->prepare( "UPDATE {$t} SET contact_name = %s, contact_phone = '', contact_email = '', notes = '', ip_hash = '' WHERE LOWER(contact_email) = LOWER(%s)", __( '[removed]', 'bmlt-literature-manager' ), $email ) );
 			}
 		);
-		if ( is_wp_error( $result ) ) {
-			return 0;
+		return is_wp_error( $result ) ? 0 : (int) $result;
+	}
+
+	/* ------------------------------------------------------------------
+	 * Whole records (backup, restore, migration).
+	 * ---------------------------------------------------------------- */
+
+	/**
+	 * Insert a full order (header, lines, history) inside a transaction.
+	 *
+	 * @param array   $rec   Header (COLUMNS).
+	 * @param array[] $items Lines (ITEM_COLUMNS).
+	 * @param array[] $notes History, oldest first.
+	 * @throws Db_Error On failure.
+	 */
+	public static function insert_record( array $rec, array $items, array $notes ) {
+		$header = array();
+		foreach ( self::COLUMNS as $k ) {
+			$header[ $k ] = array_key_exists( $k, $rec ) ? $rec[ $k ] : null;
 		}
-		if ( $count ) {
-			Store::replace_backups( $touched );
-			foreach ( Store::snapshot_files( 'orders' ) as $copy ) {
-				Store::edit_copy(
-					$copy,
-					static function ( array $data ) use ( $email ) {
-						$n   = 0;
-						$new = self::scrub_orders( $data, $email, $n );
-						return $n ? $new : null;
-					}
-				);
+		$header['submission_hash'] = '' !== (string) $header['submission_hash'] ? $header['submission_hash'] : null;
+		$header['fulfilled_at']    = '' !== (string) $header['fulfilled_at'] ? $header['fulfilled_at'] : null;
+		Db::insert( 'orders', $header );
+		$lines = array();
+		foreach ( array_values( $items ) as $i => $it ) {
+			$line = array(
+				'order_id' => (int) $rec['id'],
+				'line_no'  => $i + 1,
+			);
+			foreach ( self::ITEM_COLUMNS as $k ) {
+				$line[ $k ] = isset( $it[ $k ] ) ? $it[ $k ] : '';
 			}
+			$lines[] = $line;
 		}
-		return $count;
+		Db::insert_many( 'order_items', $lines );
+		$history = array();
+		foreach ( $notes as $n ) {
+			$history[] = array(
+				'order_id'   => (int) $rec['id'],
+				'user_id'    => (int) $n['user_id'],
+				'note_type'  => (string) $n['note_type'],
+				'old_status' => (string) $n['old_status'],
+				'new_status' => (string) $n['new_status'],
+				'note'       => (string) $n['note'],
+				'created_at' => (string) $n['created_at'],
+			);
+		}
+		Db::insert_many( 'order_notes', $history );
 	}
 
 	/**
-	 * Remove one requester's contact details from an order document (a month file or the index).
+	 * Every order as backup documents ("orders/YYYY-MM" => { orders: { id: full record } }).
 	 *
-	 * @param array  $doc   Document with an "orders" map.
-	 * @param string $email Email.
-	 * @param int    $count Incremented per order changed.
 	 * @return array
 	 */
-	private static function scrub_orders( array $doc, $email, &$count = 0 ) {
-		if ( ! isset( $doc['orders'] ) || ! is_array( $doc['orders'] ) ) {
-			return $doc;
-		}
-		foreach ( $doc['orders'] as $id => $o ) {
-			if ( ! is_array( $o ) || ! isset( $o['contact_email'] ) || 0 !== strcasecmp( (string) $o['contact_email'], $email ) ) {
-				continue;
+	public static function export_documents() {
+		global $wpdb;
+		$docs = array();
+		$t    = Db::table( 'orders' );
+		$last = 0;
+		do {
+			$rows = Db::rows( $wpdb->prepare( "SELECT * FROM {$t} WHERE id > %d ORDER BY id LIMIT 500", $last ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+			foreach ( $rows as $r ) {
+				$id                = (int) $r['id'];
+				$last              = $id;
+				$rec               = (array) self::header_obj( $r );
+				$rec['fulfilled_at'] = null === $rec['fulfilled_at'] ? '' : $rec['fulfilled_at'];
+				$rec['items']      = self::item_rows( $id );
+				$rec['notes_log']  = self::note_rows( $id );
+				$docs[ self::month_doc( $rec['created_at'] ) ]['orders'][ $id ] = $rec;
 			}
-			foreach ( array( 'contact_phone', 'contact_email', 'notes', 'ip_hash' ) as $f ) {
-				if ( array_key_exists( $f, $o ) ) {
-					$doc['orders'][ $id ][ $f ] = '';
-				}
-			}
-			$doc['orders'][ $id ]['contact_name'] = __( '[removed]', 'bmlt-literature-manager' );
-			++$count;
-		}
-		return $doc;
-	}
-
-	/**
-	 * Rebuild the index (next_id, hashes, item references) from the month files.
-	 *
-	 * @return array|\WP_Error Summary { orders: int, months: int }.
-	 */
-	public static function rebuild_index() {
-		return Store::tx(
-			static function () {
-				$idx = array(
-					'next_id' => 1,
-					'orders'  => array(),
-					'hashes'  => array(),
-					'refs'    => array(),
-				);
-				$months = 0;
-				$max    = 0;
-				foreach ( Store::names( 'orders' ) as $doc ) {
-					if ( self::INDEX === $doc || ! preg_match( '#^orders/\d{4}-\d{2}$#', $doc ) ) {
-						continue;
-					}
-					++$months;
-					$m = Store::get( $doc, array( 'orders' => array() ) );
-					foreach ( isset( $m['orders'] ) && is_array( $m['orders'] ) ? $m['orders'] : array() as $id => $rec ) {
-						if ( ! is_array( $rec ) || empty( $rec['created_at'] ) ) {
-							continue;
-						}
-						$id                   = (int) $id;
-						$rec['id']            = $id;
-						$idx['orders'][ $id ] = self::index_entry( $rec );
-						if ( ! empty( $rec['submission_hash'] ) ) {
-							$idx['hashes'][ (string) $rec['submission_hash'] ] = $id;
-						}
-						foreach ( isset( $rec['items'] ) && is_array( $rec['items'] ) ? $rec['items'] : array() as $it ) {
-							$iid = isset( $it['item_id'] ) ? (int) $it['item_id'] : 0;
-							if ( $iid ) {
-								$idx['refs'][ $iid ] = ( isset( $idx['refs'][ $iid ] ) ? $idx['refs'][ $iid ] : 0 ) + 1;
-							}
-						}
-						$max = max( $max, $id );
-					}
-				}
-				// Never reuse an order number, even if the old index knew of a higher ID.
-				$old            = self::index();
-				$idx['next_id'] = max( $max + 1, (int) $old['next_id'] );
-				Store::put( self::INDEX, $idx );
-				return array(
-					'orders' => count( $idx['orders'] ),
-					'months' => $months,
-				);
-			}
-		);
+		} while ( count( $rows ) === 500 );
+		return $docs;
 	}
 }

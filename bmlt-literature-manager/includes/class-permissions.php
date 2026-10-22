@@ -3,7 +3,7 @@
  * Roles, capabilities and per-Area access.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -27,9 +27,16 @@ class Permissions {
 	const AREA_META = 'bmlt_lit_restrict_areas';
 
 	/**
-	 * Store document with per-user grants: { users: { user_id: { caps: [], areas: [] } } }.
+	 * Name of the grants document in backups: { users: { user_id: { caps: [], areas: [] } } }.
 	 */
 	const DOC = 'permissions';
+
+	/**
+	 * Request cache: blog id => user id => grant.
+	 *
+	 * @var array
+	 */
+	private static $cache = array();
 
 	/**
 	 * Register the capability filter.
@@ -39,10 +46,7 @@ class Permissions {
 	}
 
 	/**
-	 * Grant literature capabilities from the JSON store (and all of them to administrators).
-	 *
-	 * Capabilities live in the data store rather than in user meta, so a database push from staging
-	 * cannot remove or add literature permissions on production.
+	 * Grant literature capabilities from the permissions table (and all of them to administrators).
 	 *
 	 * @param array    $allcaps All capabilities.
 	 * @param string[] $caps    Required primitive capabilities.
@@ -69,50 +73,91 @@ class Permissions {
 	}
 
 	/**
+	 * Drop the request cache.
+	 */
+	public static function flush() {
+		self::$cache = array();
+	}
+
+	/**
+	 * Every stored grant (inside a transaction: as the transaction sees them, never cached).
+	 *
+	 * @return array user_id => { caps: string[], areas: int[] }
+	 */
+	public static function all_grants() {
+		$blog = get_current_blog_id();
+		if ( ! Db::in_tx() && isset( self::$cache[ $blog ] ) ) {
+			return self::$cache[ $blog ];
+		}
+		$t   = Db::table( 'permissions' );
+		$all = array();
+		foreach ( Db::rows( "SELECT user_id, caps, areas FROM {$t} ORDER BY user_id" ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+			$all[ (int) $r['user_id'] ] = array(
+				'caps'  => array_values( array_intersect( self::caps(), explode( ',', (string) $r['caps'] ) ) ),
+				'areas' => array_values( array_filter( array_map( 'absint', explode( ',', (string) $r['areas'] ) ) ) ),
+			);
+		}
+		if ( ! Db::in_tx() ) {
+			self::$cache[ $blog ] = $all;
+		}
+		return $all;
+	}
+
+	/**
 	 * Stored grants for a user.
 	 *
 	 * @param int $user_id User.
 	 * @return array { caps: string[], areas: int[] }
 	 */
 	public static function grants_for( $user_id ) {
-		$doc = Store::get( self::DOC, array( 'users' => array() ) );
-		$g   = isset( $doc['users'][ (int) $user_id ] ) && is_array( $doc['users'][ (int) $user_id ] ) ? $doc['users'][ (int) $user_id ] : array();
-		return array(
-			'caps'  => isset( $g['caps'] ) && is_array( $g['caps'] ) ? array_values( array_intersect( self::caps(), $g['caps'] ) ) : array(),
-			'areas' => isset( $g['areas'] ) && is_array( $g['areas'] ) ? array_values( array_filter( array_map( 'absint', $g['areas'] ) ) ) : array(),
+		$all = self::all_grants();
+		return isset( $all[ (int) $user_id ] ) ? $all[ (int) $user_id ] : array(
+			'caps'  => array(),
+			'areas' => array(),
 		);
 	}
 
 	/**
-	 * Save grants for several users at once.
+	 * Save one user's grant (inside a transaction); an empty grant removes the row.
+	 *
+	 * @param int      $uid   User.
+	 * @param string[] $caps  Capabilities.
+	 * @param int[]    $areas Areas.
+	 * @throws Db_Error On failure.
+	 */
+	public static function put_grant( $uid, array $caps, array $areas ) {
+		$caps  = array_values( array_intersect( self::caps(), $caps ) );
+		$areas = array_values( array_unique( array_filter( array_map( 'absint', $areas ) ) ) );
+		if ( empty( $caps ) && empty( $areas ) ) {
+			Db::delete( 'permissions', array( 'user_id' => absint( $uid ) ) );
+			return;
+		}
+		Db::upsert(
+			'permissions',
+			array(
+				'user_id' => absint( $uid ),
+				'caps'    => implode( ',', $caps ),
+				'areas'   => implode( ',', $areas ),
+			),
+			array( 'user_id' )
+		);
+	}
+
+	/**
+	 * Save grants for several users at once (all or none).
 	 *
 	 * @param array $sets user_id => { caps: string[], areas: int[] }.
 	 * @return true|\WP_Error
 	 */
 	public static function save_grants( array $sets ) {
-		return Store::tx(
+		return Db::tx(
 			static function () use ( $sets ) {
-				$doc = Store::get( self::DOC, array( 'users' => array() ) );
-				if ( ! isset( $doc['users'] ) || ! is_array( $doc['users'] ) ) {
-					$doc['users'] = array();
-				}
 				foreach ( $sets as $uid => $set ) {
-					$uid   = absint( $uid );
-					$caps  = array_values( array_intersect( self::caps(), (array) $set['caps'] ) );
-					$areas = array_values( array_unique( array_filter( array_map( 'absint', (array) $set['areas'] ) ) ) );
-					if ( ! $uid ) {
-						continue;
-					}
-					if ( empty( $caps ) && empty( $areas ) ) {
-						unset( $doc['users'][ $uid ] );
-					} else {
-						$doc['users'][ $uid ] = array(
-							'caps'  => $caps,
-							'areas' => $areas,
-						);
+					if ( absint( $uid ) ) {
+						self::put_grant( absint( $uid ), (array) $set['caps'], (array) $set['areas'] );
 					}
 				}
-				return Store::put( self::DOC, $doc );
+				return true;
 			}
 		);
 	}
@@ -189,7 +234,7 @@ class Permissions {
 				}
 			}
 		}
-		// Grants live in the data store and are removed with it.
+		// Grants live in the permissions table and are removed with it.
 	}
 
 	/**
@@ -293,8 +338,7 @@ class Permissions {
 				'number'   => 500,
 			)
 		);
-		$doc     = Store::get( self::DOC, array( 'users' => array() ) );
-		$ids     = isset( $doc['users'] ) && is_array( $doc['users'] ) ? array_map( 'absint', array_keys( $doc['users'] ) ) : array();
+		$ids     = array_keys( self::all_grants() );
 		$granted = $ids ? get_users(
 			array(
 				'include' => $ids,

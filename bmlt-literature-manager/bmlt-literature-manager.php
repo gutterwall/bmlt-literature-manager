@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       BMLT Literature Manager
  * Plugin URI:        https://bmlt.app/
- * Description:       Narcotics Anonymous literature ordering with Area-specific inventory, pricing, special orders, order management, email notifications, JSON import/export and SMTP — integrated with the BMLT. All data is stored in JSON files outside the WordPress database, so staging database pushes never overwrite production orders.
- * Version: 6.3.0
+ * Description:       Narcotics Anonymous literature ordering with Area-specific inventory, pricing, special orders, order management, email notifications, JSON import/export and SMTP — integrated with the BMLT. Data is kept in the plugin's own WordPress database tables, and every change is saved completely or not at all.
+ * Version: 7.0.0
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            BMLT Literature Manager Contributors
@@ -13,12 +13,12 @@
  * Domain Path:       /languages
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BMLT_LIT_VERSION', '6.3.0' );
+define( 'BMLT_LIT_VERSION', '7.0.0' );
 define( 'BMLT_LIT_FILE', __FILE__ );
 define( 'BMLT_LIT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BMLT_LIT_URL', plugin_dir_url( __FILE__ ) );

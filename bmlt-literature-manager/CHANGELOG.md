@@ -2,6 +2,20 @@
 
 All notable changes to BMLT Literature Manager.
 
+## 7.0.0 — 2026-10-22
+
+Storage moves to the WordPress database:
+
+- All data is now in the WordPress database, the standard way for plugins: catalog, inventory, orders (with their lines and history in `order_items` and `order_notes`), the audit log and literature permissions in the plugin's own InnoDB tables (`<prefix>bmlt_literature_*`, created and upgraded with `dbDelta()`), and settings, templates, SMTP settings and the BMLT cache as `bmlt_literature_*` options. On a network each site has its own tables, and deleting a site deletes them.
+- Every change is one database transaction, saved completely or rolled back: an order with its lines, history and reserved stock; a status change and its stock effect; a whole catalog or inventory import (a failure half-way used to leave the items before it); a backup restore; every settings or permissions change together with its audit entry (the entry used to be written separately). Any failed query aborts the change, nested steps are savepoints, settings written by a change that is rolled back never reach WordPress's option cache, and a transaction left open by PHP stopping is rolled back.
+- Changes take a store-wide lock row and wait up to 15 seconds for each other (`bmlt_lit_lock_wait` filter), so two orders can never reserve the same stock.
+- Order and item numbers come from sequences that are never reused, also after a restore.
+- Upgrading from version 6 (or 2–5) moves the JSON data folder into the database automatically, in one transaction: settings and SMTP password, catalog, inventory, permissions, orders with their history, the audit log and the last BMLT answers. A damaged file is read from its `.bak` copy; if both are unreadable the move stops, administrators are told which file, and nothing changes. The folder is left untouched until it is deleted with **Tools / Status → Delete the old data folder**; until then the privacy eraser points out that it may hold the person's data. Upgrading from 1.0 moves its tables the same way.
+- Backups keep the same file format, so 6.x backups restore into 7.0 and the other way round.
+- Tools / Status shows the tables, their size, whether each supports transactions (InnoDB) and any database error; **Verify storage** creates missing tables and columns. The order-index rebuild and the file snapshots are gone (nothing to rebuild; a restore that fails changes nothing — download a backup before restoring if you may want the current data back).
+- `BMLT_LIT_DATA_DIR` and the `bmlt_lit_data_dir` filter now only locate the version 6 folder for the upgrade; `BMLT_LIT_LOCK_METHOD` is no longer used.
+- Staging and production: a database push now carries the literature data. Exclude the `bmlt_literature_*` tables and options from pushes, or copy data on purpose with backup and restore. The "created by another site" warning now refers to the database.
+
 ## 6.3.0 — 2026-10-22
 
 Security and privacy:

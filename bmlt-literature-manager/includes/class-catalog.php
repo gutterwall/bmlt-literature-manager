@@ -3,7 +3,7 @@
  * Literature catalog.
  *
  * @package BMLT_Lit
- * @version 6.3.0
+ * @version 7.0.0
  */
 
 namespace BMLT_Lit;
@@ -13,31 +13,71 @@ defined( 'ABSPATH' ) || exit;
 /**
  * CRUD for literature items.
  *
- * Stored in catalog.json.php. Items with area_id = 0 form the shared catalog available to every managed Area.
+ * Stored in the items table. Items with area_id = 0 form the shared catalog available to every managed Area.
  * Items with a specific area_id belong only to that Area's catalog, allowing each Area to keep its own
  * catalog and pricing when desired.
  */
 class Catalog {
 
 	/**
-	 * Store document.
+	 * Name of the catalog document in backups.
 	 */
 	const DOC = 'catalog';
 
 	/**
-	 * Raw catalog document.
+	 * Request cache: blog id => items keyed by id.
+	 *
+	 * @var array
+	 */
+	private static $cache = array();
+
+	/**
+	 * Drop the request cache.
+	 */
+	public static function flush() {
+		self::$cache = array();
+	}
+
+	/**
+	 * Item array from a table row.
+	 *
+	 * @param array $r Row.
+	 * @return array
+	 */
+	private static function from_row( array $r ) {
+		$r['id']         = (int) $r['id'];
+		$r['area_id']    = (int) $r['area_id'];
+		$r['is_active']  = (int) $r['is_active'];
+		$r['sort_order'] = (int) $r['sort_order'];
+		$r['price']      = Helpers::sql_money( $r['price'] );
+		return $r;
+	}
+
+	/**
+	 * Every item, keyed by id (inside a transaction: as the transaction sees them, never cached).
 	 *
 	 * @return array { next_id: int, items: array }
 	 */
 	public static function doc() {
-		$d = Store::get( self::DOC, array( 'next_id' => 1, 'items' => array() ) );
-		if ( ! isset( $d['items'] ) || ! is_array( $d['items'] ) ) {
-			$d['items'] = array();
+		$blog = get_current_blog_id();
+		if ( Db::in_tx() || ! isset( self::$cache[ $blog ] ) ) {
+			$t     = Db::table( 'items' );
+			$items = array();
+			foreach ( Db::rows( "SELECT * FROM {$t} ORDER BY id" ) as $r ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+				$items[ (int) $r['id'] ] = self::from_row( $r );
+			}
+			if ( Db::in_tx() ) {
+				return array(
+					'next_id' => Db::counter( 'item' ),
+					'items'   => $items,
+				);
+			}
+			self::$cache[ $blog ] = $items;
 		}
-		if ( empty( $d['next_id'] ) ) {
-			$d['next_id'] = $d['items'] ? max( array_map( 'intval', array_keys( $d['items'] ) ) ) + 1 : 1;
-		}
-		return $d;
+		return array(
+			'next_id' => Db::counter( 'item' ),
+			'items'   => self::$cache[ $blog ],
+		);
 	}
 
 	/**
@@ -55,15 +95,32 @@ class Catalog {
 	}
 
 	/**
+	 * One item as an array (inside a transaction: read from the table).
+	 *
+	 * @param int $id Item ID.
+	 * @return array|null
+	 */
+	private static function find( $id ) {
+		global $wpdb;
+		$id = absint( $id );
+		if ( Db::in_tx() ) {
+			$t = Db::table( 'items' );
+			$r = Db::row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+			return $r ? self::from_row( $r ) : null;
+		}
+		$d = self::doc();
+		return isset( $d['items'][ $id ] ) ? $d['items'][ $id ] : null;
+	}
+
+	/**
 	 * Get one item.
 	 *
 	 * @param int $id Item ID.
 	 * @return object|null
 	 */
 	public static function get( $id ) {
-		$d  = self::doc();
-		$id = absint( $id );
-		return isset( $d['items'][ $id ] ) ? self::obj( $d['items'][ $id ] ) : null;
+		$i = self::find( $id );
+		return $i ? self::obj( $i ) : null;
 	}
 
 	/**
@@ -73,11 +130,39 @@ class Catalog {
 	 * @return object[] Keyed by ID.
 	 */
 	public static function get_many( array $ids ) {
-		$d   = self::doc();
 		$out = array();
-		foreach ( array_unique( array_filter( array_map( 'absint', $ids ) ) ) as $id ) {
+		foreach ( self::rows_for( $ids ) as $id => $i ) {
+			$out[ $id ] = self::obj( $i );
+		}
+		return $out;
+	}
+
+	/**
+	 * Several items as arrays keyed by id (inside a transaction: read from the table).
+	 *
+	 * @param int[] $ids IDs.
+	 * @return array
+	 */
+	public static function rows_for( array $ids ) {
+		global $wpdb;
+		$ids = array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+		$out = array();
+		if ( ! $ids ) {
+			return $out;
+		}
+		if ( Db::in_tx() ) {
+			$t  = Db::table( 'items' );
+			$ph = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- table name; $ph is a list of %d placeholders.
+			foreach ( Db::rows( $wpdb->prepare( "SELECT * FROM {$t} WHERE id IN ({$ph})", $ids ) ) as $r ) {
+				$out[ (int) $r['id'] ] = self::from_row( $r );
+			}
+			return $out;
+		}
+		$d = self::doc();
+		foreach ( $ids as $id ) {
 			if ( isset( $d['items'][ $id ] ) ) {
-				$out[ $id ] = self::obj( $d['items'][ $id ] );
+				$out[ $id ] = $d['items'][ $id ];
 			}
 		}
 		return $out;
@@ -204,12 +289,9 @@ class Catalog {
 	 * @return bool
 	 */
 	public static function sku_exists( $sku, $area_id, $exclude_id = 0 ) {
-		foreach ( self::doc()['items'] as $i ) {
-			if ( (int) $i['area_id'] === absint( $area_id ) && (int) $i['id'] !== absint( $exclude_id ) && 0 === strcasecmp( (string) $i['sku'], (string) $sku ) ) {
-				return true;
-			}
-		}
-		return false;
+		global $wpdb;
+		$t = Db::table( 'items' );
+		return null !== Db::var( $wpdb->prepare( "SELECT id FROM {$t} WHERE area_id = %d AND LOWER(sku) = LOWER(%s) AND id <> %d LIMIT 1", absint( $area_id ), (string) $sku, absint( $exclude_id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
 	}
 
 	/**
@@ -220,12 +302,10 @@ class Catalog {
 	 * @return object|null
 	 */
 	public static function get_by_sku( $sku, $area_id ) {
-		foreach ( self::doc()['items'] as $i ) {
-			if ( (int) $i['area_id'] === absint( $area_id ) && 0 === strcasecmp( (string) $i['sku'], (string) $sku ) ) {
-				return self::obj( $i );
-			}
-		}
-		return null;
+		global $wpdb;
+		$t  = Db::table( 'items' );
+		$id = Db::var( $wpdb->prepare( "SELECT id FROM {$t} WHERE area_id = %d AND LOWER(sku) = LOWER(%s) ORDER BY id LIMIT 1", absint( $area_id ), (string) $sku ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name.
+		return null === $id ? null : self::get( (int) $id );
 	}
 
 	/**
@@ -313,36 +393,44 @@ class Catalog {
 	}
 
 	/**
+	 * Table row from sanitized item data.
+	 *
+	 * @param array $data Data from sanitize().
+	 * @return array
+	 */
+	private static function to_row( array $data ) {
+		$row = array();
+		foreach ( array( 'area_id', 'sku', 'name', 'short_description', 'long_description', 'category', 'price', 'is_active', 'sort_order', 'image_url', 'reference_url', 'naws_id' ) as $k ) {
+			$row[ $k ] = isset( $data[ $k ] ) ? $data[ $k ] : '';
+		}
+		$row['price'] = Helpers::sql_money( $row['price'] );
+		return $row;
+	}
+
+	/**
 	 * Create an item.
 	 *
 	 * @param array $raw Raw input.
 	 * @return int|\WP_Error
 	 */
 	public static function create( array $raw ) {
-		$result = Store::tx(
+		return Db::tx(
 			static function () use ( $raw ) {
-				$data = self::sanitize( $raw ); // Runs inside the lock, so SKU uniqueness is race-free.
+				$data = self::sanitize( $raw ); // Runs under the store lock, so SKU uniqueness is race-free.
 				if ( is_wp_error( $data ) ) {
 					return $data;
 				}
-				$doc                = self::doc();
-				$id                 = (int) $doc['next_id'];
-				$now                = Helpers::now_gmt();
-				$data['id']         = $id;
-				$data['price']      = Helpers::sql_money( $data['price'] );
-				$data['created_at'] = $now;
-				$data['updated_at'] = $now;
-				$doc['items'][ $id ] = $data;
-				$doc['next_id']      = $id + 1;
-				Store::put( self::DOC, $doc );
-				return $id;
+				$id                = Db::next_id( 'item', 'items' );
+				$now               = Helpers::now_gmt();
+				$row               = self::to_row( $data );
+				$row['id']         = $id;
+				$row['created_at'] = $now;
+				$row['updated_at'] = $now;
+				Db::insert( 'items', $row );
+				$logged = Audit::log( 'item_created', 'item', $id, null, self::audit_view( $row ), (int) $row['area_id'] );
+				return is_wp_error( $logged ) ? $logged : $id;
 			}
 		);
-		if ( ! is_wp_error( $result ) ) {
-			$item = self::get( $result );
-			Audit::log( 'item_created', 'item', $result, null, self::audit_view( (array) $item ), (int) $item->area_id );
-		}
-		return $result;
 	}
 
 	/**
@@ -353,39 +441,31 @@ class Catalog {
 	 * @return true|\WP_Error
 	 */
 	public static function update( $id, array $raw ) {
-		$id       = absint( $id );
-		$existing = null;
-		$result   = Store::tx(
-			static function () use ( $id, $raw, &$existing ) {
-				$doc = self::doc();
-				if ( ! isset( $doc['items'][ $id ] ) ) {
+		$id = absint( $id );
+		return Db::tx(
+			static function () use ( $id, $raw ) {
+				$existing = self::get( $id );
+				if ( ! $existing ) {
 					return new \WP_Error( 'not_found', __( 'Item not found.', 'bmlt-literature-manager' ) );
 				}
-				$existing = self::obj( $doc['items'][ $id ] );
-				$data     = self::sanitize( $raw, $existing );
+				$data = self::sanitize( $raw, $existing );
 				if ( is_wp_error( $data ) ) {
 					return $data;
 				}
-				$data['price']       = Helpers::sql_money( $data['price'] );
-				$data['updated_at']  = Helpers::now_gmt();
-				$doc['items'][ $id ] = array_merge( $doc['items'][ $id ], $data );
-				Store::put( self::DOC, $doc );
+				$row               = self::to_row( $data );
+				$row['updated_at'] = Helpers::now_gmt();
+				Db::update( 'items', $row, array( 'id' => $id ) );
+				$old = self::audit_view( (array) $existing );
+				$new = self::audit_view( $row );
+				if ( Helpers::to_cents( $existing->price ) !== Helpers::to_cents( $row['price'] ) ) {
+					Audit::log( 'item_price_changed', 'item', $id, array( 'price' => $existing->price ), array( 'price' => $row['price'] ), (int) $row['area_id'] );
+				}
+				if ( $old !== $new ) {
+					Audit::log( 'item_updated', 'item', $id, $old, $new, (int) $row['area_id'] );
+				}
 				return true;
 			}
 		);
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-		$new_item = self::get( $id );
-		$old      = self::audit_view( (array) $existing );
-		$new      = self::audit_view( (array) $new_item );
-		if ( Helpers::to_cents( $existing->price ) !== Helpers::to_cents( $new_item->price ) ) {
-			Audit::log( 'item_price_changed', 'item', $id, array( 'price' => $existing->price ), array( 'price' => $new_item->price ), (int) $new_item->area_id );
-		}
-		if ( $old !== $new ) {
-			Audit::log( 'item_updated', 'item', $id, $old, $new, (int) $new_item->area_id );
-		}
-		return true;
 	}
 
 	/**
@@ -416,27 +496,27 @@ class Catalog {
 	public static function set_active( $id, $active ) {
 		$id     = absint( $id );
 		$active = $active ? 1 : 0;
-		$before = null;
-		$result = Store::tx(
-			static function () use ( $id, $active, &$before ) {
-				$doc = self::doc();
-				if ( ! isset( $doc['items'][ $id ] ) ) {
+		return Db::tx(
+			static function () use ( $id, $active ) {
+				$before = self::find( $id );
+				if ( ! $before ) {
 					return new \WP_Error( 'not_found', __( 'Item not found.', 'bmlt-literature-manager' ) );
 				}
-				$before = $doc['items'][ $id ];
 				if ( (int) $before['is_active'] === $active ) {
 					return true;
 				}
-				$doc['items'][ $id ]['is_active']  = $active;
-				$doc['items'][ $id ]['updated_at'] = Helpers::now_gmt();
-				Store::put( self::DOC, $doc );
+				Db::update(
+					'items',
+					array(
+						'is_active'  => $active,
+						'updated_at' => Helpers::now_gmt(),
+					),
+					array( 'id' => $id )
+				);
+				Audit::log( $active ? 'item_activated' : 'item_deactivated', 'item', $id, array( 'is_active' => (int) $before['is_active'] ), array( 'is_active' => $active ), (int) $before['area_id'] );
 				return true;
 			}
 		);
-		if ( ! is_wp_error( $result ) && $before && (int) $before['is_active'] !== $active ) {
-			Audit::log( $active ? 'item_activated' : 'item_deactivated', 'item', $id, array( 'is_active' => (int) $before['is_active'] ), array( 'is_active' => $active ), (int) $before['area_id'] );
-		}
-		return $result;
 	}
 
 	/**
@@ -446,7 +526,7 @@ class Catalog {
 	 * @return bool
 	 */
 	public static function is_referenced( $id ) {
-		return in_array( absint( $id ), Orders::referenced_item_ids(), true );
+		return array() !== self::referenced_ids( array( $id ) );
 	}
 
 	/**
@@ -456,7 +536,16 @@ class Catalog {
 	 * @return int[]
 	 */
 	public static function referenced_ids( array $ids ) {
-		return array_values( array_intersect( array_map( 'absint', $ids ), Orders::referenced_item_ids() ) );
+		global $wpdb;
+		$ids = array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+		if ( ! $ids ) {
+			return array();
+		}
+		$t  = Db::table( 'order_items' );
+		$ph = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- table name; $ph is a list of %d placeholders.
+		$found = array_map( 'intval', Db::col( $wpdb->prepare( "SELECT DISTINCT item_id FROM {$t} WHERE item_id IN ({$ph})", $ids ) ) );
+		return array_values( array_intersect( $ids, $found ) );
 	}
 
 	/**
@@ -466,34 +555,22 @@ class Catalog {
 	 * @return true|\WP_Error
 	 */
 	public static function delete( $id ) {
-		$id      = absint( $id );
-		$removed = null;
-		$result  = Store::tx(
-			static function () use ( $id, &$removed ) {
-				$doc = self::doc();
-				if ( ! isset( $doc['items'][ $id ] ) ) {
+		$id = absint( $id );
+		return Db::tx(
+			static function () use ( $id ) {
+				$removed = self::find( $id );
+				if ( ! $removed ) {
 					return new \WP_Error( 'not_found', __( 'Item not found.', 'bmlt-literature-manager' ) );
 				}
-				if ( in_array( $id, Orders::referenced_item_ids( true ), true ) ) {
+				if ( self::is_referenced( $id ) ) {
 					return new \WP_Error( 'referenced', __( 'This item appears on historical orders and cannot be deleted. Deactivate it instead.', 'bmlt-literature-manager' ) );
 				}
-				$removed = $doc['items'][ $id ];
-				unset( $doc['items'][ $id ] );
-				Store::put( self::DOC, $doc );
-
-				// Never leave inventory rows pointing at a missing item.
-				$inv = Store::get( Inventory::DOC, array( 'areas' => array() ) );
-				foreach ( isset( $inv['areas'] ) && is_array( $inv['areas'] ) ? array_keys( $inv['areas'] ) : array() as $area ) {
-					unset( $inv['areas'][ $area ][ $id ] );
-				}
-				Store::put( Inventory::DOC, $inv );
+				Db::delete( 'items', array( 'id' => $id ) );
+				Db::delete( 'inventory', array( 'item_id' => $id ) ); // Never leave inventory rows pointing at a missing item.
+				Audit::log( 'item_deleted', 'item', $id, self::audit_view( $removed ), null, (int) $removed['area_id'] );
 				return true;
 			}
 		);
-		if ( ! is_wp_error( $result ) && $removed ) {
-			Audit::log( 'item_deleted', 'item', $id, self::audit_view( $removed ), null, (int) $removed['area_id'] );
-		}
-		return $result;
 	}
 
 	/**

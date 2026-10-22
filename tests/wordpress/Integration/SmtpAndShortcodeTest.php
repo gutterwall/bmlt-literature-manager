@@ -7,7 +7,6 @@ namespace BmltLitTest;
 
 use BMLT_Lit\Settings;
 use BMLT_Lit\Smtp;
-use BMLT_Lit\Store;
 
 class SmtpAndShortcodeTest extends TestCase {
 
@@ -18,7 +17,7 @@ class SmtpAndShortcodeTest extends TestCase {
 		$this->assertSame( array( 'smtp.example.orgrm-rf', 65535, 'tls' ), array( $o['host'], $o['port'], $o['encryption'] ) );
 		$this->assertStringStartsWith( 'v1:', $o['password'] );
 		$this->assertSame( 'Pa$$w0rdX', Smtp::password() );
-		$this->assertStringNotContainsString( 'Pa$$w0rd', file_get_contents( Store::path( 'settings' ) ) );
+		$this->assertStringNotContainsString( 'Pa$$w0rd', self::everything_stored() );
 		$this->assertSame( 'Login as [redacted] with [redacted] failed', Smtp::redact( 'Login as lit-user with Pa$$w0rdX failed' ) );
 
 		// A blank password field keeps the stored one; "clear" removes it.
