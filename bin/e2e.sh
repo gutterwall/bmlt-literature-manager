@@ -216,12 +216,17 @@ add_filter( 'http_allowed_safe_ports', static function ( \$ports ) {
 EOF
 "${WP[@]}" plugin install "$PLUGIN_ZIP" --activate
 "$APACHE" -f "$W/run/apache.conf" -k start
-"$NGINX" -e "$W/logs/nginx-early.log" -p "$W/nginx" -c "$W/nginx/nginx.conf" >"$W/logs/nginx.out" 2>&1 &
+# nginx -e (1.19.5 and later) sends its early messages to our log instead of the unwritable /var/log/nginx; older
+# versions (Ubuntu 22.04, AlmaLinux 8) have no -e and only log an alert there.
+NGINX_EARLY=()
+"$NGINX" -h 2>&1 | grep -q -- '-e filename' && NGINX_EARLY=(-e "$W/logs/nginx-early.log")
+"$NGINX" "${NGINX_EARLY[@]}" -p "$W/nginx" -c "$W/nginx/nginx.conf" >"$W/logs/nginx.out" 2>&1 &
 PIDS+=($!)
 for i in $(seq 1 50); do
 	curl -s -o /dev/null "$SITE_A/" && curl -s -o /dev/null "$SITE_N/" && break
 	sleep 0.2
 done
+curl -s -o /dev/null "$SITE_N/" || { cat "$W/logs/nginx.out"; fail "nginx did not start"; }
 pass "WordPress $("${WP[@]}" core version), theme $("${WP[@]}" theme list --status=active --field=name), plugin $("${WP[@]}" plugin get bmlt-literature-manager --field=version); Apache $("$APACHE" -v | sed -n 's/Server version: Apache\/\([0-9.]*\).*/\1/p'), nginx $("$NGINX" -v 2>&1 | sed 's/.*nginx\///'), PHP $(php -r 'echo PHP_VERSION;')"
 DATA="$W/wp/wp-content/bmlt-literature-data"
 "${WP[@]}" eval '
