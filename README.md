@@ -48,7 +48,7 @@ WordPress refuses Root Server URLs on private addresses or unusual ports; allow 
 | `vendor/bin/phpcs`, `vendor/bin/phpstan analyse` | WordPress security rules (escaping, nonces, input, SQL, i18n) and PHP 7.4+ compatibility; static analysis at level 5 | `composer install` |
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs all of them on every push: WordPress 5.9 on PHP 7.4,
-the latest WordPress on PHP 8.1 to 8.4, single site and multisite, MySQL 5.7 and 8.0, MariaDB 10.6 and 11.4.
+the latest WordPress on PHP 8.1 to 8.5, single site and multisite, MySQL 5.7 and 8.0, MariaDB 10.6, 11.4 and 11.8.
 
 ## Releasing
 

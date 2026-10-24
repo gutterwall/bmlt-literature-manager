@@ -155,7 +155,9 @@ abstract class TestCase extends \WP_UnitTestCase {
 	 */
 	public static function set_static( $class, $prop, $value ) {
 		$r = new \ReflectionProperty( $class, $prop );
-		$r->setAccessible( true );
+		if ( PHP_VERSION_ID < 80100 ) { // Private members are accessible to reflection from PHP 8.1.
+			$r->setAccessible( true );
+		}
 		$r->setValue( null, $value );
 	}
 
@@ -168,7 +170,9 @@ abstract class TestCase extends \WP_UnitTestCase {
 	 */
 	public static function get_static( $class, $prop ) {
 		$r = new \ReflectionProperty( $class, $prop );
-		$r->setAccessible( true );
+		if ( PHP_VERSION_ID < 80100 ) { // Private members are accessible to reflection from PHP 8.1.
+			$r->setAccessible( true );
+		}
 		return $r->getValue();
 	}
 
